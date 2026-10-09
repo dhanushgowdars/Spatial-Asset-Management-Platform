@@ -21,3 +21,10 @@
 .gi-map-canvas.is-geometry .gi-map { background-color: #f4f8fa; background-image: linear-gradient(#dde8ec 1px, transparent 1px), linear-gradient(90deg, #dde8ec 1px, transparent 1px); background-size: 72px 72px; }
 .gi-table tbody tr:not(:has(.gi-empty-table)) { cursor: pointer; }
 .gi-table tbody tr:focus-visible { outline: 3px solid #0a907d; outline-offset: -3px; background: #eaf8f3; }
+
+/* C2: keep geometry visibility controls usable on laptop and narrow screens. */
+.gi-map-toolbar{flex-wrap:wrap}
+.gi-map-toolbar .gi-map-style button:disabled{opacity:.45;cursor:not-allowed}
+.gi-detail-subheading{font-size:12px;letter-spacing:.025em;color:#166e62;margin:20px 0 8px;font-weight:760}
+.gi-detail-subheading+.gi-properties{margin-top:0}
+.gi-detail-no-attributes{font-size:12px;color:#708695;line-height:1.6}

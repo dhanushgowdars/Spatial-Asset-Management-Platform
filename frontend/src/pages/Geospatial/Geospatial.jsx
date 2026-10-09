@@ -54,7 +54,7 @@ function formatMeasure(measurement, compact = false) {
 }
 
 function featureName(item) {
-  return String(item?.properties?.name || item?.properties?.Name || `Feature ${item?.index ?? item?.id ?? ''}`);
+  return String(item?.properties?.name || item?.properties?.Name || item?.properties?.NAME || item?.properties?.name_en || `Feature ${Number.isInteger(item?.index) ? item.index + 1 : item?.id ?? ''}`);
 }
 
 function Status({ status }) {
@@ -85,41 +85,69 @@ function MapController({ features, selectedFeature, fitToken, selectionToken }) 
   return null;
 }
 
-function GeometryMap({ geojson, datasetId, selectedId, setSelectedId, selectionToken }) {
+function GeometryMap({ geojson, datasetId, selectedId, setSelectedId, selectionToken, visibility, setVisibility }) {
   const [baseStyle, setBaseStyle] = useState('streets');
   const [fitToken, setFitToken] = useState(0);
   const features = useMemo(() => (geojson?.features || EMPTY).filter(item => item?.geometry && ['Point','MultiPoint','LineString','MultiLineString','Polygon','MultiPolygon'].includes(item.geometry.type)), [geojson]);
-  const mapData = useMemo(() => ({ type: 'FeatureCollection', features }), [features]);
   const selectedFeature = features.find(item => String(item.id) === String(selectedId));
+  const renderedFeatures = useMemo(() => visibility === 'selected' && selectedId != null
+    ? features.filter(item => String(item.id) === String(selectedId)) : features, [features, selectedId, visibility]);
+  const mapData = useMemo(() => ({ type: 'FeatureCollection', features: renderedFeatures }), [renderedFeatures]);
   const onStyle = useCallback(feature => {
     const selected = String(feature?.id) === String(selectedId);
     const type = kindOf(feature?.geometry?.type);
-    return { color: palette[type], weight: selected ? 5 : 3.5, fillColor: palette[type], fillOpacity: selected ? 0.4 : 0.23, opacity: 1 };
+    return { color: palette[type], weight: selected ? 5 : selectedId == null ? 3.5 : 2.5, fillColor: palette[type], fillOpacity: selected ? 0.4 : selectedId == null ? 0.23 : 0.06, opacity: selected || selectedId == null ? 1 : 0.28 };
   }, [selectedId]);
   const pointToLayer = useCallback((feature, latlng) => L.circleMarker(latlng, {
     radius: String(feature?.id) === String(selectedId) ? 11 : 8,
-    color: '#ffffff', weight: 2.5, fillColor: palette.point, fillOpacity: 1,
+    color: '#ffffff', weight: 2.5, fillColor: palette.point,
+    fillOpacity: selectedId == null || String(feature?.id) === String(selectedId) ? 1 : 0.3,
   }), [selectedId]);
   return <div className="gi-map-wrap">
-    <div className="gi-map-toolbar"><button className="gi-map-action" type="button" onClick={() => { setSelectedId(null); setFitToken(n => n + 1); }} disabled={!features.length}><Icon name="crosshair" size={17}/> Fit all features</button><div className="gi-map-style" role="group" aria-label="Map appearance"><button type="button" aria-pressed={baseStyle === 'geometry'} className={baseStyle === 'geometry' ? 'active' : ''} onClick={() => setBaseStyle('geometry')}>Geometry only</button><button type="button" aria-pressed={baseStyle === 'streets'} className={baseStyle === 'streets' ? 'active' : ''} onClick={() => setBaseStyle('streets')}>Streets</button></div></div>
+    <div className="gi-map-toolbar"><button className="gi-map-action" type="button" onClick={() => { setVisibility('all'); setSelectedId(null); setFitToken(n => n + 1); }} disabled={!features.length}><Icon name="crosshair" size={17}/> Fit all features</button><div className="gi-map-style" role="group" aria-label="Visible features"><button type="button" aria-pressed={visibility === 'all'} className={visibility === 'all' ? 'active' : ''} onClick={() => setVisibility('all')}>All features</button><button type="button" aria-pressed={visibility === 'selected'} className={visibility === 'selected' ? 'active' : ''} disabled={!selectedFeature} onClick={() => setVisibility('selected')}>Selected only</button></div><div className="gi-map-style" role="group" aria-label="Map appearance"><button type="button" aria-pressed={baseStyle === 'geometry'} className={baseStyle === 'geometry' ? 'active' : ''} onClick={() => setBaseStyle('geometry')}>Geometry only</button><button type="button" aria-pressed={baseStyle === 'streets'} className={baseStyle === 'streets' ? 'active' : ''} onClick={() => setBaseStyle('streets')}>Streets</button></div></div>
     <div className={`gi-map-canvas ${baseStyle === 'geometry' ? 'is-geometry' : ''}`}>
       <MapContainer center={[20, 78]} zoom={4} maxZoom={21} zoomControl={false} scrollWheelZoom={true} className="gi-map">
         {baseStyle === 'streets' && <TileLayer key="streets" maxNativeZoom={19} maxZoom={21} attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>}
-        {!!features.length && <GeoJSON key={`${datasetId}:${selectedId ?? 'all'}`} data={mapData} style={onStyle} pointToLayer={pointToLayer} onEachFeature={(feature, layer) => { layer.on('click', () => setSelectedId(String(feature.id))); layer.bindTooltip(String(featureName(feature)).slice(0, 90), { sticky: true, opacity: 0.95 }); }}/>}
+        {!!renderedFeatures.length && <GeoJSON key={`${datasetId}:${selectedId ?? 'all'}:${visibility}`} data={mapData} style={onStyle} pointToLayer={pointToLayer} onEachFeature={(feature, layer) => { layer.on('click', () => { setSelectedId(String(feature.id)); setVisibility('selected'); }); layer.bindTooltip(String(featureName(feature)).slice(0, 90), { sticky: true, opacity: 0.95 }); }}/>}
         <MapController features={features} selectedFeature={selectedFeature} fitToken={fitToken} selectionToken={selectionToken}/>
         <ZoomControl position="bottomright"/>
       </MapContainer>
       {!features.length && <div className="gi-map-no-data"><Icon name="map" size={30}/><strong>No map geometry available</strong><p>{geojson ? 'The file has no features with safely mappable coordinates.' : 'Upload a dataset to display its features.'}</p></div>}
       <div className="gi-map-legend"><span><i className="gi-legend-dot polygon"/>Polygon</span><span><i className="gi-legend-dot line"/>Line</span><span><i className="gi-legend-dot point"/>Point</span></div>
     </div>
-    <div className="gi-map-caption">Geometry display: WGS84 (EPSG:4326) <span>{baseStyle === 'streets' ? 'Basemap © OpenStreetMap contributors' : 'Geometry-only view · no map key required'}</span></div>
+    <div className="gi-map-caption">Geometry display: WGS84 (EPSG:4326) <span>{visibility === 'selected' ? 'Showing selected feature only' : 'Showing dataset features'} · {baseStyle === 'streets' ? 'Basemap © OpenStreetMap contributors' : 'No basemap key required'}</span></div>
   </div>;
 }
 
-function FeaturePanel({ item, featureCount }) {
+function FeaturePanel({ item, featureCount, metadata }) {
   if (!item) return <div className="gi-detail"><div className="gi-eyebrow-mini">SELECTED FEATURE</div><div className="gi-detail-empty"><span><Icon name="crosshair" size={25}/></span><strong>Select a feature to inspect</strong><p>Choose a row from the measurement records or click a geometry on the map. Each measurement is linked to its source CRS and projected calculation.</p><small>{featureCount} features available for inspection</small></div></div>;
-  const props = Object.entries(item.properties || {}).filter(([key]) => !key.startsWith('_')).slice(0, 16);
-  return <div className="gi-detail"><div className="gi-eyebrow-mini">SELECTED FEATURE</div><h3>{featureName(item)}</h3><div className="gi-detail-measure">{formatMeasure(item.measurement)}</div><Status status={item.status}/><dl className="gi-properties"><div><dt>Geometry type</dt><dd>{item.geometry_type}</dd></div><div><dt>Source CRS</dt><dd>{item.crs || 'Not provided'}</dd></div><div><dt>Measurement CRS</dt><dd>{item.measurement_crs || 'Not applicable'}</dd></div>{props.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{typeof value === 'object' ? JSON.stringify(value) : String(value ?? '—')}</dd></div>)}</dl>{item.error && <div className="gi-inline-warning"><Icon name="alert" size={18}/><div><strong>Feature could not be measured</strong><p>{item.error}</p></div></div>}{item.warnings?.length > 0 && <div className="gi-inline-warning"><Icon name="alert" size={18}/><div><strong>Measurement note</strong><p>{item.warnings.join(' · ')}</p></div></div>}</div>;
+  const props = Object.entries(item.properties || {}).filter(([key]) => !key.startsWith('_'));
+  const valueText = value => typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '—');
+  const measurementLabel = item.measurement?.type === 'area' ? 'Area' : item.measurement?.type === 'length' ? 'Length' : 'Measurement';
+  return <div className="gi-detail">
+    <div className="gi-eyebrow-mini">SELECTED FEATURE</div>
+    <h3>{featureName(item)}</h3>
+    <div className="gi-detail-measure">{formatMeasure(item.measurement)}</div>
+    <Status status={item.status}/>
+    <h4 className="gi-detail-subheading">Measurement & coordinate system</h4>
+    <dl className="gi-properties">
+      <div><dt>Geometry type</dt><dd>{item.geometry_type}</dd></div>
+      <div><dt>{measurementLabel} status</dt><dd>{item.status === 'MEASURED' ? 'Calculated' : item.status === 'NOT_APPLICABLE' ? 'Not required' : 'Unavailable'}</dd></div>
+      <div><dt>Source CRS</dt><dd>{item.crs || 'Not provided'}</dd></div>
+      <div><dt>Measurement CRS</dt><dd>{item.measurement_crs || 'Not applicable'}</dd></div>
+    </dl>
+    <h4 className="gi-detail-subheading">Record provenance</h4>
+    <dl className="gi-properties">
+      <div><dt>Source file</dt><dd>{metadata?.filename || 'Unknown'}</dd></div>
+      <div><dt>Source record ID</dt><dd>{item.id}</dd></div>
+      {Number.isInteger(item.index) && <div><dt>Record number</dt><dd>{item.index + 1}</dd></div>}
+      {metadata?.sha256 && <div><dt>File SHA-256</dt><dd>{metadata.sha256}</dd></div>}
+    </dl>
+    <h4 className="gi-detail-subheading">Original source attributes</h4>
+    {props.length ? <dl className="gi-properties">{props.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{valueText(value)}</dd></div>)}</dl> : <p className="gi-detail-no-attributes">No additional attributes were supplied by the uploaded file.</p>}
+    {item.error && <div className="gi-inline-warning"><Icon name="alert" size={18}/><div><strong>Feature could not be measured</strong><p>{item.error}</p></div></div>}
+    {item.warnings?.length > 0 && <div className="gi-inline-warning"><Icon name="alert" size={18}/><div><strong>Measurement note</strong><p>{item.warnings.join(' · ')}</p></div></div>}
+  </div>;
 }
 
 function readRecent() {
@@ -135,6 +163,7 @@ export default function Geospatial() {
   const resultRef = useRef(null);
   const [dataset, setDataset] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+  const [visibility, setVisibility] = useState('all');
   const [selectionToken, setSelectionToken] = useState(0);
   const [busy, setBusy] = useState(false);
   const [busyText, setBusyText] = useState('');
@@ -147,6 +176,7 @@ export default function Geospatial() {
 
   const inspectFeature = useCallback(item => {
     setSelectedId(String(item.id));
+    setVisibility('selected');
     setSelectionToken(current => current + 1);
     document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
@@ -179,6 +209,7 @@ export default function Geospatial() {
     setError('');
     setDataset(null);
     setSelectedId(null);
+    setVisibility('all');
     try {
       const result = await fn(controller.signal);
       if (controllerRef.current !== controller) return;
@@ -245,7 +276,7 @@ export default function Geospatial() {
       {dataset && <section ref={resultRef} className="gi-results" aria-label="Geospatial analysis results" aria-live="polite"><div className="gi-report-head"><div><div className="gi-eyebrow-mini">ANALYSIS COMPLETE / {dataset.metadata.id.slice(0, 8)}</div><h2>{dataset.metadata.filename}</h2><p>{dataset.metadata.feature_count} features extracted <span aria-hidden="true">·</span> Source CRS: <strong>{dataset.metadata.crs || 'Unknown'}</strong></p></div><div className="gi-report-actions"><span className={`gi-result-status ${failed.length ? 'gi-result-attention' : ''}`}><Icon name={failed.length ? 'alert' : 'check'} size={16}/>{failed.length ? `${failed.length} feature${failed.length === 1 ? '' : 's'} need attention` : 'Processing complete'}</span><button className="gi-btn-outline" type="button" onClick={() => downloadCSV(dataset.metadata.filename, dataset.measurements)}><Icon name="download" size={18}/> Export CSV</button></div></div>
         {failed.length > 0 && <div role="status" className="gi-result-warning"><Icon name="alert" size={20}/><span>{failed.length} feature{failed.length !== 1 ? 's' : ''} could not be measured. Select the affected feature in the table to review the reason. Valid measurements are preserved.</span></div>}
         <div className="gi-stats"><Stat icon="layers" title="Extracted features" value={dataset.metadata.feature_count.toLocaleString()} note="Features in uploaded dataset"/><Stat icon="area" title="Polygon area" value={polygons.length ? formatMeasure({ value: totalArea, unit: 'm2' }, true) : '—'} note={`${polygons.length} successfully measured polygon${polygons.length === 1 ? '' : 's'}`}/><Stat icon="route" title="Line length" value={lines.length ? formatMeasure({ value: totalLength, unit: 'm' }, true) : '—'} note={`${lines.length} successfully measured line${lines.length === 1 ? '' : 's'}`}/><Stat icon={failed.length ? 'alert' : 'check'} title="Measured features" value={`${measured.length} / ${measurements.length}`} note={`${failed.length} failed · ${measurements.length - measured.length - failed.length} not applicable`} variation={failed.length ? 'warning' : ''}/></div>
-        <section id="explore" className="gi-analysis-section"><div className="gi-section-head"><div><div className="gi-eyebrow-mini">STEP 02 / EXPLORE</div><h2>Geometry explorer</h2><p>See every mappable feature and select one to inspect its calculations and original attributes.</p></div><span className="gi-measurement-note"><Icon name="crosshair" size={16}/> Map in EPSG:4326</span></div><div className="gi-explorer-grid"><div className="gi-map-panel"><GeometryMap geojson={dataset.geojson} datasetId={dataset.metadata.id} selectedId={selectedId} setSelectedId={setSelectedId} selectionToken={selectionToken}/></div><div className="gi-detail-panel"><FeaturePanel item={selected} featureCount={measurements.length}/></div></div></section>
+        <section id="explore" className="gi-analysis-section"><div className="gi-section-head"><div><div className="gi-eyebrow-mini">STEP 02 / EXPLORE</div><h2>Geometry explorer</h2><p>See every mappable feature and select one to inspect its calculations and original attributes.</p></div><span className="gi-measurement-note"><Icon name="crosshair" size={16}/> Map in EPSG:4326</span></div><div className="gi-explorer-grid"><div className="gi-map-panel"><GeometryMap geojson={dataset.geojson} datasetId={dataset.metadata.id} selectedId={selectedId} setSelectedId={setSelectedId} selectionToken={selectionToken} visibility={visibility} setVisibility={setVisibility}/></div><div className="gi-detail-panel"><FeaturePanel item={selected} featureCount={measurements.length} metadata={dataset.metadata}/></div></div></section>
         <section id="records" className="gi-records"><div className="gi-records-head"><div><div className="gi-eyebrow-mini">STEP 03 / VERIFY</div><h2>Feature measurements</h2><p>Every row represents a parsed feature. Use the filters, then select a row to inspect its provenance on the map.</p></div><div className="gi-table-filters"><input aria-label="Search features" placeholder="Search features" value={query} onChange={event => setQuery(event.target.value)}/><select aria-label="Filter features" value={filter} onChange={event => setFilter(event.target.value)}><option value="all">All features</option><option value="polygon">Polygons</option><option value="line">Lines</option><option value="point">Points</option><option value="failed">Failed</option></select></div></div><div className="gi-table-scroll"><table className="gi-table"><thead><tr><th>Feature</th><th>Geometry</th><th>Measurement</th><th>Status</th><th>Inspect</th></tr></thead><tbody>{displayed.length ? displayed.map(item => <tr key={`${item.index}:${item.id}`} className={String(item.id) === String(selectedId) ? 'selected' : ''} tabIndex={0} title={`Inspect ${featureName(item)} on the map`} onClick={() => inspectFeature(item)} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); inspectFeature(item); } }}><td><strong>{featureName(item)}</strong><small>ID: {item.id}</small></td><td><span className={`gi-geometry gi-geometry-${kindOf(item.geometry_type)}`}>{item.geometry_type}</span></td><td>{formatMeasure(item.measurement)}</td><td><Status status={item.status}/></td><td><button type="button" className="gi-inspect-btn" onClick={event => { event.stopPropagation(); inspectFeature(item); }} aria-label={`Inspect ${featureName(item)}`}><Icon name="crosshair" size={18}/></button></td></tr>) : <tr><td colSpan={5} className="gi-empty-table">No features match your filters.</td></tr>}</tbody></table></div></section>
         <div className="gi-provenance"><Icon name="ruler" size={22}/><div><strong>How were the measurements calculated?</strong><p>Polygon area and line length are computed on projected geometries in metric units. Inspect any feature to see its source CRS and measurement CRS. The map uses WGS84 coordinates for display only.</p></div><a href="/docs" target="_blank" rel="noreferrer">Inspect REST API <Icon name="external" size={15}/></a></div>
       </section>}
