@@ -331,6 +331,12 @@ def _feature_result(raw: RawFeature, index: int) -> dict[str, Any]:
         display = transform_geometry(to_wgs.transform, geom)
         if display.is_empty or not all(isfinite(v) for v in display.bounds):
             raise ValueError('Coordinates cannot be transformed to geographic CRS')
+        # Longitude/latitude validity is NOT implied by a valid Shapely
+        # geometry.  EPSG:4326 Shapefiles can contain longitude 181 or
+        # latitude 95, and a same-CRS transform can silently retain them.
+        min_lon, min_lat, max_lon, max_lat = display.bounds
+        if min_lon < -180 or max_lon > 180 or min_lat < -90 or max_lat > 90:
+            raise ValueError('Invalid longitude/latitude after CRS transformation')
         result['geometry'] = mapping(display)
         if geom.geom_type in ('Point', 'MultiPoint'):
             result['status'] = 'NOT_APPLICABLE'

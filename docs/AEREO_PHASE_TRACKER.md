@@ -1,7 +1,7 @@
 # GeoInsight / Aereo — Phase Tracker and Recovery Log
 
 **Owner:** Project repository maintainer
-**Last prepared:** 2026-10-09 around 23:00 IST
+**Last updated:** 2026-10-09 after C0 source recovery
 **Source of truth:** [AEREO_EXECUTION_MASTER_PLAN.md](./AEREO_EXECUTION_MASTER_PLAN.md).
 **Submission target:** 2026-10-11 13:00 IST (internal target); hiring manager said 11 October EOD, exact time unknown.
 
@@ -13,7 +13,7 @@
 - [x] Existing frontend lint and production Vite build passed at earlier checkpoint.
 - [x] Generated/synthetic KML & zipped Shapefile samples exercised end-to-end in browser; geometry selection, projected measurements, known square/hole/line checks matched expected results.
 - [x] Browser screenshot demonstrated key-free geometry-only layer and restored row-click selection.
-- [ ] **C0 baseline committed and pushed**; SHA not yet available from user's terminal.
+- [x] **C0 baseline committed and pushed**: `b52d4f8`; corrective engine-source commit pushed: `48c3a52`. User verified both engine files tracked and `18 passed`.
 - [ ] External third-party GIS data tested.
 - [ ] New formats, survey QA, extra metrics, enhanced exports implemented.
 - [ ] Docker production deployment working, persistent results after restart.
@@ -25,7 +25,7 @@
 
 | Checkpoint | Date/time IST | Commit SHA | Test/build/QA evidence | Public branch status | Notes/issues |
 | --- | --- | --- | --- | --- | --- |
-| C0 — baseline | PENDING | PENDING | 18/18 Pytest + frontend lint/build observed precommit; rerun before staging | PENDING | Current working sources need reviewed staged diff |
+| C0 — baseline | 2026-10-09 | `b52d4f8`, `48c3a52` | 18/18 Pytest, frontend lint/build passed; engine source corrective push verified | pushed `feature/aereo-geospatial-measurements` | Known good recovery SHA is `48c3a52` |
 | C1 — external compatibility | PENDING | — | — | — | — |
 | C2 — QA/formats | PENDING | — | — | — | — |
 | C3 — measurement evidence/export | PENDING | — | — | — | — |
@@ -92,3 +92,10 @@ git log -1 --oneline
 - `2026-10-09 / D04`: Push phase-wise; track checkpoint SHA + proof before advancing. Main branch updated only at release.
 
 **At handoff to a new chat:** Share this file (or public repo link) and the latest `git status --short`, `git log -1 --oneline`, test results; resume from first pending checkpoint.
+
+## C1 compatibility patch in progress (do not mark complete until pushed)
+
+- Seven regression tests added covering nested/uppercase Shapefiles, CP1252 attributes, foot-based projection units, nested KML folders, impossible EPSG:4326 coordinates, feature cap and duplicate ZIP paths.
+- Parser now refuses to render geometries whose transformed WGS84 bounds exceed valid longitude/latitude ranges.
+- C1 acceptance: at least 25 isolated tests pass locally, one actual external Shapefile manually uploaded, browser workflow remains functional, commit and push recorded.
+- External real-world GIS datasets are **NOT** automatically validated merely because the synthetic compatibility tests pass.
