@@ -99,3 +99,22 @@ git log -1 --oneline
 - Parser now refuses to render geometries whose transformed WGS84 bounds exceed valid longitude/latitude ranges.
 - C1 acceptance: at least 25 isolated tests pass locally, one actual external Shapefile manually uploaded, browser workflow remains functional, commit and push recorded.
 - External real-world GIS datasets are **NOT** automatically validated merely because the synthetic compatibility tests pass.
+
+## 2026-10-10 — Verified recovery ledger (supersedes unchecked old boxes above)
+
+- `70e0209`: C1 compatibility tests/source pushed; 25 tests passed. External Natural Earth river lines (13 features) processed; separate WGS84 geodesic comparison maximum deviation 0.208% for that dataset, not survey certification.
+- `e5a33fd`: cross-platform npm lockfile repair pushed; GitHub CI subsequently recovered.
+- `699c7ce`: single-origin Docker/React/FastAPI release pushed; 26 tests passed locally; user verified browser KML/Shapefile upload, GET/GeoJSON/measurements, health HTTP 200, and same stored ID after container restart.
+- `85284b7`: feature isolation and provenance UI pushed; user screenshots show Point/LineString/Polygon selection and selected-only map.
+- `e1de412`: updated dependency lockfile pushed. GitHub run `37979548065` **success**, both backend and frontend jobs successful, production audit **found 0 vulnerabilities**.
+- **C2 in development (not pushed until verified):** add RFC 7946 GeoJSON/KMZ input, feature-level typed QA issues and `/api/files/{id}/quality/`; next run complete local and GitHub tests, then record new commit SHA. Do not confuse C2 with the earlier UI checkpoint label.
+- **Not yet done:** public HTTPS deployment, C3 extended measurements/exports, C4 quality UI and full final README/submission. Prioritize a dependable submission ahead of speculative additions.
+
+## 2026-10-10 — C2 verified browser/API acceptance and C3 implementation
+
+- User validated 45/45 backend tests, React lint/build, a successful multi-stage Docker build and same-origin `/geospatial` HTTP 200.
+- GeoJSON QA sample: 201 Created, 3 features, 1 measured, 1 `NOT_APPLICABLE`, 1 failed; `/quality/` reported `TRANSFORM_FAILED` for `bad-location` with correct counts.
+- KMZ QA sample: 201 Created, 2 features, 1 measured, 1 `NOT_APPLICABLE`, 0 failed. Screenshots confirm map, source CRS, selected feature and SHA-256 provenance.
+- The initial C2 frontend file chooser did not update the separate `geospatialService.js` extension validator; a focused fix was applied and verified before the above screenshots. C2 commit/push remains user-controlled; record SHA after push.
+- C3 extends the same engine with polygon perimeter/centroid/WGS84 envelope, line parts/segments/endpoints, point coordinate evidence, `/summary/`, and CSV/GeoJSON `/export/`. Initial local tests in a C2-based patch workspace passed; user must rerun and commit/push C3 separately after C2.
+- Outstanding: C4 visual quality explorer and server export UI, hosted service with durable DB and upload abuse protections, release README and submission.

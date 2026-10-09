@@ -4,16 +4,20 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from hashlib import sha256
 import os
+import json
 from pathlib import Path
 from uuid import uuid4
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, Depends
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import Response
 from sqlalchemy import JSON, DateTime, Integer, String, Text, create_engine, select, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 from app.services.geospatial import InvalidGeospatialUpload, process_upload
 from app.services.geospatial.engine import MAX_UPLOAD_BYTES
+from app.services.geospatial.quality import build_quality_report
+from app.services.geospatial.reporting import build_summary, build_geojson, build_csv
 
 
 class Base(DeclarativeBase):
@@ -64,7 +68,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
 
     application = FastAPI(
         title='Aereo Geospatial File Measurement API',
-        description='KML and zipped Shapefile measurement with transparent CRS metadata',
+        description='KML, zipped Shapefile, GeoJSON and KMZ measurement with transparent CRS and quality diagnostics',
         version='0.1.0', lifespan=lifespan,
     )
 
@@ -91,8 +95,8 @@ def create_app(database_url: str | None = None) -> FastAPI:
     @application.post('/api/files/', status_code=201)
     async def upload_file(file: UploadFile = File(...), db: Session = Depends(session)):
         filename = file.filename or 'unknown'
-        if not filename.lower().endswith(('.kml', '.zip')):
-            raise HTTPException(status_code=415, detail='Upload .kml or .zip containing a Shapefile')
+        if not filename.lower().endswith(('.kml', '.zip', '.geojson', '.kmz')):
+            raise HTTPException(status_code=415, detail='Upload .kml, .zip containing a Shapefile, .geojson or .kmz')
         data = await file.read(MAX_UPLOAD_BYTES + 1)
         await file.close()
         if not data or len(data) > MAX_UPLOAD_BYTES:
@@ -122,6 +126,9 @@ def create_app(database_url: str | None = None) -> FastAPI:
             'file_url': f'/api/files/{file_id}/',
             'measurements_url': f'/api/files/{file_id}/measurements/',
             'geojson_url': f'/api/files/{file_id}/geojson/',
+            'quality_url': f'/api/files/{file_id}/quality/',
+            'summary_url': f'/api/files/{file_id}/summary/',
+            'export_url': f'/api/files/{file_id}/export/',
         }
 
     @application.get('/api/files/{file_id}/')
@@ -137,22 +144,38 @@ def create_app(database_url: str | None = None) -> FastAPI:
             'status': row.status, 'measurements': row.result_json['features'],
         }
 
+    @application.get('/api/files/{file_id}/quality/')
+    def get_quality(file_id: str, db: Session = Depends(session)):
+        row = lookup(file_id, db)
+        return build_quality_report(row.result_json, file_id=row.id)
+
+    @application.get('/api/files/{file_id}/summary/')
+    def get_summary(file_id: str, db: Session = Depends(session)):
+        row = lookup(file_id, db)
+        return build_summary(row.result_json, file_id=row.id)
+
     @application.get('/api/files/{file_id}/geojson/')
     def geojson(file_id: str, db: Session = Depends(session)):
         row = lookup(file_id, db)
-        features = []
-        for f in row.result_json['features']:
-            if f['geometry'] is None:
-                continue
-            features.append({
-                'type': 'Feature', 'id': f['id'], 'geometry': f['geometry'],
-                'properties': {
-                    **f['properties'], '_measurement': f['measurement'],
-                    '_measurement_crs': f['measurement_crs'],
-                    '_status': f['status'], '_error': f['error'],
-                },
-            })
-        return {'type': 'FeatureCollection', 'features': features}
+        return build_geojson(row.result_json)
+
+    @application.get('/api/files/{file_id}/export/')
+    def export(file_id: str, format: str = 'csv', db: Session = Depends(session)):
+        row = lookup(file_id, db)
+        if format == 'csv':
+            return Response(
+                build_csv(row.result_json), media_type='text/csv; charset=utf-8',
+                headers={'Content-Disposition': 'attachment; filename="geoinsight-measurements.csv"',
+                         'X-Content-Type-Options': 'nosniff'},
+            )
+        if format == 'geojson':
+            return Response(
+                json.dumps(build_geojson(row.result_json), ensure_ascii=False, allow_nan=False),
+                media_type='application/geo+json',
+                headers={'Content-Disposition': 'attachment; filename="geoinsight-features.geojson"',
+                         'X-Content-Type-Options': 'nosniff'},
+            )
+        raise HTTPException(status_code=422, detail='Export format must be csv or geojson')
     return application
 
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 from io import BytesIO
+import json
 from math import isfinite
 from pathlib import PurePosixPath
 from typing import Any
@@ -253,6 +254,84 @@ def _parse_shapefile_zip(data: bytes) -> tuple[list[RawFeature], str | None]:
     return raw, crs_label
 
 
+
+def _parse_geojson(data: bytes) -> tuple[list[RawFeature], str]:
+    """RFC 7946 GeoJSON: input coordinates are WGS84 lon/lat, not arbitrary CRS."""
+    try:
+        document = json.loads(
+            data.decode('utf-8-sig'),
+            parse_constant=lambda value: (_ for _ in ()).throw(ValueError(f'Invalid JSON number: {value}')),
+        )
+    except (UnicodeError, json.JSONDecodeError, ValueError, RecursionError) as exc:
+        raise InvalidGeospatialUpload(f'Invalid GeoJSON document: {exc}') from exc
+    if not isinstance(document, dict) or 'crs' in document:
+        raise InvalidGeospatialUpload('GeoJSON must be an RFC 7946 object without a custom CRS')
+    if document.get('type') == 'FeatureCollection':
+        entries = document.get('features')
+        if not isinstance(entries, list):
+            raise InvalidGeospatialUpload('GeoJSON FeatureCollection requires a features array')
+    elif document.get('type') == 'Feature':
+        entries = [document]
+    else:
+        raise InvalidGeospatialUpload('GeoJSON must contain a Feature or FeatureCollection')
+    if not entries:
+        raise InvalidGeospatialUpload('GeoJSON contains no features')
+    if len(entries) > MAX_FEATURES:
+        raise InvalidGeospatialUpload('GeoJSON exceeds maximum feature count')
+    crs = CRS.from_epsg(4326)
+    raw: list[RawFeature] = []
+    for index, feature in enumerate(entries, start=1):
+        props: dict[str, Any] = {}
+        geom = None
+        error = None
+        if not isinstance(feature, dict) or feature.get('type') != 'Feature':
+            error = 'Expected GeoJSON Feature object'
+        elif 'crs' in feature:
+            error = 'GeoJSON features cannot override WGS84 CRS'
+        else:
+            supplied_props = feature.get('properties')
+            if supplied_props is not None and not isinstance(supplied_props, dict):
+                error = 'GeoJSON properties must be an object or null'
+            elif isinstance(supplied_props, dict):
+                props = supplied_props
+            geometry_object = feature.get('geometry')
+            if not error:
+                if geometry_object is None:
+                    error = 'Missing GeoJSON geometry'
+                elif not isinstance(geometry_object, dict) or 'crs' in geometry_object:
+                    error = 'Invalid GeoJSON geometry or unsupported custom CRS'
+                else:
+                    try:
+                        geom = shape(geometry_object)
+                    except Exception as exc:
+                        error = f'Invalid GeoJSON geometry: {exc}'
+        if error:
+            props = dict(props)
+            props['_parse_error'] = error
+        supplied_id = feature.get('id') if isinstance(feature, dict) else None
+        record_id = str(supplied_id) if isinstance(supplied_id, (str, int)) and not isinstance(supplied_id, bool) else str(index)
+        raw.append(RawFeature(record_id, geom, props, crs))
+    return raw, 'EPSG:4326'
+
+
+def _parse_kmz(data: bytes) -> tuple[list[RawFeature], str]:
+    """Only one embedded KML is accepted; archive traversal/bombs are rejected."""
+    try:
+        archive = zipfile.ZipFile(BytesIO(data))
+    except (OSError, zipfile.BadZipFile) as exc:
+        raise InvalidGeospatialUpload('Not a valid KMZ ZIP archive') from exc
+    with archive:
+        entries = _safe_zip_entries(archive)
+        candidates = [info for name, info in entries.items() if name.endswith('.kml')]
+        if len(candidates) != 1:
+            raise InvalidGeospatialUpload('KMZ must contain exactly one KML document')
+        try:
+            kml_bytes = archive.read(candidates[0])
+        except (OSError, RuntimeError, zipfile.BadZipFile, ValueError) as exc:
+            raise InvalidGeospatialUpload('Could not read embedded KMZ KML') from exc
+    return _parse_kml(kml_bytes)
+
+
 def _json_safe(value: Any) -> Any:
     if isinstance(value, (date, datetime)):
         return value.isoformat()
@@ -338,7 +417,19 @@ def _feature_result(raw: RawFeature, index: int) -> dict[str, Any]:
         if min_lon < -180 or max_lon > 180 or min_lat < -90 or max_lat > 90:
             raise ValueError('Invalid longitude/latitude after CRS transformation')
         result['geometry'] = mapping(display)
+        # Display evidence is always WGS84 (longitude, latitude), never metric.
+        # A conventional bbox can be misleading for dateline-crossing features;
+        # the consumer must treat it as an envelope, not as a surveyed extent.
+        result['evidence'] = {
+            'bbox_wgs84': [round(float(v), 9) for v in display.bounds],
+            'bbox_order': 'min_lon,min_lat,max_lon,max_lat',
+        }
         if geom.geom_type in ('Point', 'MultiPoint'):
+            points = list(display.geoms) if geom.geom_type == 'MultiPoint' else [display]
+            result['evidence']['point_locations_wgs84'] = [
+                [round(float(p.x), 9), round(float(p.y), 9)] for p in points
+            ]
+            result['evidence']['point_count'] = len(points)
             result['status'] = 'NOT_APPLICABLE'
             return result
         if geom.geom_type not in ('Polygon','MultiPolygon','LineString','MultiLineString'):
@@ -358,6 +449,40 @@ def _feature_result(raw: RawFeature, index: int) -> dict[str, Any]:
         }
         result['measurement_crs'] = label
         result['warnings'] = warnings
+        result['measurement_method'] = 'projected_planar_geometry'
+        if geom.geom_type in ('Polygon', 'MultiPolygon'):
+            # Shapely boundary length includes polygon holes and all multipart
+            # ring boundaries, unlike convex-hull or exterior-only length.
+            parts = list(measured.geoms) if geom.geom_type == 'MultiPolygon' else [measured]
+            centre_metric = measured.centroid
+            to_display = Transformer.from_crs(metric_crs, CRS.from_epsg(4326), always_xy=True)
+            centroid_lon, centroid_lat = to_display.transform(centre_metric.x, centre_metric.y)
+            if not all(isfinite(v) for v in (centroid_lon, centroid_lat)):
+                raise ValueError('Cannot transform polygon centroid')
+            result['evidence'].update({
+                'perimeter_m': round(float(measured.boundary.length), 6),
+                'centroid_wgs84': [round(float(centroid_lon), 9), round(float(centroid_lat), 9)],
+                'polygon_parts': len(parts),
+                'area_method': 'planar_area_in_measurement_crs',
+                'perimeter_method': 'planar_boundary_length_in_measurement_crs',
+                'centroid_method': 'projected_planar_centroid_transformed_to_wgs84',
+            })
+        else:
+            line_parts = list(measured.geoms) if geom.geom_type == 'MultiLineString' else [measured]
+            display_parts = list(display.geoms) if geom.geom_type == 'MultiLineString' else [display]
+            result['evidence'].update({
+                'line_parts': len(line_parts),
+                'segments': sum(max(0, len(part.coords) - 1) for part in line_parts),
+                'part_details': [
+                    {
+                        'length_m': round(float(part.length), 6),
+                        'start_wgs84': [round(float(v), 9) for v in shown.coords[0][:2]],
+                        'end_wgs84': [round(float(v), 9) for v in shown.coords[-1][:2]],
+                    }
+                    for part, shown in zip(line_parts, display_parts)
+                ],
+                'length_method': 'planar_line_length_in_measurement_crs',
+            })
         result['status'] = 'MEASURED'
     except Exception as exc:
         result['status'] = 'FAILED'
@@ -380,11 +505,18 @@ def process_upload(filename: str, content: bytes) -> dict[str, Any]:
         raw, source_crs = _parse_kml(content)
     elif safe_name.lower().endswith('.zip'):
         raw, source_crs = _parse_shapefile_zip(content)
+    elif safe_name.lower().endswith('.geojson'):
+        raw, source_crs = _parse_geojson(content)
+    elif safe_name.lower().endswith('.kmz'):
+        raw, source_crs = _parse_kmz(content)
     else:
-        raise InvalidGeospatialUpload('Accepted types: .kml or zipped Shapefile (.zip)')
+        raise InvalidGeospatialUpload('Accepted types: .kml, .zip (Shapefile), .geojson or .kmz')
     if len(raw) > MAX_FEATURES:
         raise InvalidGeospatialUpload('File exceeds feature-count limit')
     features = [_feature_result(x, i) for i, x in enumerate(raw)]
+    from app.services.geospatial.quality import issues_for_feature
+    for feature in features:
+        feature['issues'] = issues_for_feature(feature)
     return {
         'filename': safe_name,
         'source_crs': source_crs,

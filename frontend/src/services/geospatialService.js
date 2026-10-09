@@ -1,6 +1,7 @@
 /** The Aereo assessment API is proxied by Vite in development and same-origin in production. */
 const ROOT = '/api/files/';
 const MAX_BYTES = 10 * 1024 * 1024;
+const SUPPORTED_FORMAT = /\.(kml|zip|geojson|kmz)$/i;
 
 async function unwrap(response) {
   if (response.ok) return response.json();
@@ -14,8 +15,8 @@ async function unwrap(response) {
 }
 
 export async function uploadDataset(file, signal) {
-  if (!file) throw new Error('Select a .kml or zipped Shapefile first.');
-  if (!/\.(kml|zip)$/i.test(file.name)) throw new Error('Only KML and ZIP Shapefile uploads are supported.');
+  if (!file) throw new Error('Select a KML, zipped Shapefile, GeoJSON or KMZ file first.');
+  if (!SUPPORTED_FORMAT.test(file.name)) throw new Error('Supported uploads: .kml, .zip (Shapefile), .geojson or .kmz.');
   if (file.size === 0 || file.size > MAX_BYTES) throw new Error('File must be nonempty and no larger than 10 MiB.');
   const form = new FormData();
   form.append('file', file);

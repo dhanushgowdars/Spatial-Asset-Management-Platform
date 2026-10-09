@@ -3,3 +3,6 @@ pyproj>=3.6,<4
 pyshp>=2.3,<3
 defusedxml>=0.7,<1
 # shapely>=2.0,<3 already present in the existing backend requirements
+
+# Starlette TestClient compatibility
+httpx2==2.13.1
