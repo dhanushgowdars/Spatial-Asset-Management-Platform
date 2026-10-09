@@ -7,6 +7,12 @@ __pycache__/
 # Environment
 .env
 
+# Aereo local runtime: generated SQLite database and temporary state
+/.aereo/
+/.coverage
+/htmlcov/
+/aereo/.pytest_cache/
+
 # VS Code
 .vscode/
 

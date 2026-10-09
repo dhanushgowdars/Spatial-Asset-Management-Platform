@@ -9,8 +9,6 @@ const formatDate = (value) => {
     : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
 };
 
-const getOwner = (asset) => asset.owner?.username || asset.owner_name || asset.owner_id || "—";
-
 const getStatusBadge = (status) => {
   const statusColors = {
     ONLINE: "badge-online",

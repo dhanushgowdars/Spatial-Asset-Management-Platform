@@ -6,6 +6,7 @@ import Dashboard from "../pages/Dashboard/Dashboard";
 import Assets from "../pages/Assets/Assets";
 import Map from "../pages/Map/Map";
 import Settings from "../pages/Settings/Settings";
+import Geospatial from "../pages/Geospatial/Geospatial";
 import NotFound from "../pages/NotFound/NotFound";
 import AppLayout from "../layouts/AppLayout";
 import { getToken } from "../utils/storage";
@@ -21,6 +22,8 @@ function PublicRoute({ children }) {
 function AppRoutes() {
   return (
     <Routes>
+      {/* Public evaluation entrypoint; existing auth-protected app is unchanged. */}
+      <Route path="/geospatial" element={<Geospatial />} />
       <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
