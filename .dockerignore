@@ -1,0 +1,18 @@
+# Exclude secrets, local runtimes, caches, and unrelated repository metadata.
+.git
+.gitignore
+.env
+.env.*
+.venv
+.aereo
+**/__pycache__
+**/.pytest_cache
+**/*.pyc
+frontend/node_modules
+frontend/dist
+node_modules
+*.sqlite3
+*.db
+*.log
+coverage
+htmlcov
