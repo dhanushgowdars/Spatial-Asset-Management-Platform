@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/files': 'http://127.0.0.1:18130',
+      '/api/analysis': 'http://127.0.0.1:18130',
       '/health': 'http://127.0.0.1:18130',
       '/docs': 'http://127.0.0.1:18130',
       '/openapi.json': 'http://127.0.0.1:18130',

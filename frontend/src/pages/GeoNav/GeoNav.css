@@ -1,0 +1,54 @@
+/* GeoInsight V10: one navigation system for every page. */
+.gn-shell{--gn-ink:#153549;--gn-green:#087f72;--gn-border:#d9e7e9;position:sticky;top:0;z-index:1200;background:#fff;border-bottom:1px solid var(--gn-border);color:var(--gn-ink);box-shadow:0 3px 16px rgba(12,60,75,.045);font-family:Inter,"Segoe UI",system-ui,sans-serif}
+.gn-shell *{box-sizing:border-box}
+.gn-inner{max-width:1560px;min-height:83px;margin:0 auto;padding:13px clamp(18px,3.1vw,46px);display:flex;align-items:center;gap:clamp(13px,1.8vw,30px)}
+.gn-logo{display:inline-flex;align-items:center;gap:12px;flex-shrink:0;min-width:200px;text-decoration:none;color:inherit}
+.gn-logo-mark{width:48px;height:48px;background:#093e47;border-radius:12px;display:grid;place-items:center;box-shadow:0 5px 13px rgba(0,54,62,.12)}
+.gn-logo-text{display:flex;flex-direction:column;gap:3px;line-height:1.05}
+.gn-logo-name{font-size:22px;letter-spacing:-.045em;font-weight:880;color:#153549;white-space:nowrap}
+.gn-logo-name strong{color:#078f7a;font-weight:880}
+.gn-logo-text small{font-size:9px;letter-spacing:.11em;font-weight:800;color:#688193;white-space:nowrap}
+.gn-links{flex:1 1 auto;min-width:0;display:flex;justify-content:center;align-items:center;gap:4px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:#d7e4e8 transparent;padding:4px 0}
+.gn-link{height:45px;flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:#466176;border:1px solid transparent;border-radius:9px;padding:0 12px;font-size:13px;font-weight:750;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+.gn-link svg{color:#668899;flex:0 0 18px}
+.gn-link:hover{background:#f0f7f8;border-color:#dcebee;color:#164b5b}
+.gn-link.is-active{background:#e7f5f1;color:#087467;border-color:#b8ddd5;box-shadow:inset 0 -2px 0 #0a8976}
+.gn-link.is-active svg{color:#087467}
+.gn-api{height:43px;display:inline-flex;align-items:center;gap:8px;color:#0b586a;text-decoration:none;font-size:13px;font-weight:830;padding:0 14px;background:#fff;border:1px solid #cfe1e6;border-radius:9px;white-space:nowrap;flex-shrink:0}
+.gn-api:hover{background:#f0f9f8;color:#006f63}
+.gn-shell a:focus-visible{outline:3px solid #16a18e;outline-offset:3px}
+@media(max-width:1380px){.gn-inner{flex-wrap:wrap;gap:8px 18px}.gn-logo{min-width:0}.gn-links{order:3;flex-basis:100%;width:100%;justify-content:flex-start}.gn-api{margin-left:auto}}
+@media(max-width:780px){.gn-inner{min-height:0;padding:10px 16px}.gn-logo-mark{width:41px;height:41px}.gn-logo-name{font-size:20px}.gn-logo-text small{font-size:8px}.gn-link{height:40px;font-size:12px;padding:0 10px}.gn-api{height:38px;font-size:12px}.gn-links{padding-bottom:2px}}
+/* Landing page used to render two competing top navigation bars. Keep one consistent menu. */
+.gi-page .gi-header {display:none}
+.gi-page .gi-main {max-width:1510px;padding:35px clamp(16px,3vw,38px) 55px}
+.gi-page .gi-hero {min-height:305px;border-radius:24px;color:#fff;background:linear-gradient(115deg,#10374c 0%,#062e3f 55%,#064d52 100%);border:1px solid #134d59;box-shadow:0 14px 34px rgba(5,43,63,.11)}
+.gi-page .gi-hero-content {padding:clamp(29px,4vw,54px)}
+.gi-page .gi-hero h1 {color:#fff;font-size:clamp(36px,3.35vw,53px);font-weight:850;line-height:1.12;letter-spacing:-.037em}
+.gi-page .gi-hero p {font-size:17px;color:#d1e5e8;max-width:760px;line-height:1.62}
+.gi-page .gi-hero h1 em {color:#7fe0cd}
+.gi-page .gi-hero .gi-eyebrow {color:#a0e8dc}
+.gi-page .gi-hero-tags span {font-size:13px;color:#e3f7f4;border-color:#3a7480}
+.gi-page .gi-workspace-head h2,.gi-page .gi-results-heading h2,.gi-page .gi-recent h2 {font-size:clamp(26px,2.2vw,33px);font-weight:830}
+.gi-page .gi-workspace-head p,.gi-page .gi-results-heading p,.gi-page .gi-recent p {font-size:15px}
+.gi-page .gi-section-eyebrow {font-size:12px}
+.gi-page .gi-upload h3 {font-size:20px}
+.gi-page .gi-upload p {font-size:14px}
+.gi-page .gi-btn-primary {font-size:15px;min-height:46px;border-radius:11px}
+.gi-page .gi-sample-row strong {font-size:15px}
+.gi-page .gi-sample-row small,.gi-page .gi-samples>p {font-size:13px}
+.gi-page .gi-stat {padding:20px;min-height:112px}
+.gi-page .gi-stat-value {font-size:clamp(22px,2.1vw,30px);color:#0b5260}
+.gi-page .gi-stat-label {font-size:13px}
+.gi-page .gi-stat-note {font-size:12px}
+.gi-page .gi-panel-head h3,.gi-page .gi-table-head h3 {font-size:20px}
+.gi-page .gi-table th {font-size:13px}
+.gi-page .gi-table td {font-size:14px}
+.gi-page .gi-verify-layout .gi-table-scroll {overflow-y:visible;max-height:none;overscroll-behavior:auto}
+.gi-page .gi-verify-detail .gi-detail {max-height:500px;overscroll-behavior:auto}
+
+.gi-page .gi-hero{background:linear-gradient(115deg,#133c4f,#0b3947 65%,#0e6a67);border-radius:19px}
+.gi-page .gi-hero h1{font-size:clamp(37px,3.45vw,54px)}
+.gi-page .gi-hero p{font-size:17px}
+.gi-page .gi-main{max-width:1560px}
+@media(max-width:680px){.gi-page .gi-main{padding:22px 14px}.gi-page .gi-hero h1{font-size:34px}.gi-page .gi-hero-content{padding:27px 23px}.gi-page .gi-hero p{font-size:15px}}

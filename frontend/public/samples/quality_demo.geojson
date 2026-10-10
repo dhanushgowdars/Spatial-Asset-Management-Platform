@@ -1,0 +1,68 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "parcel-a",
+      "properties": {
+        "name": "QA Demo Parcel",
+        "site": "Synthetic QA Example"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.5,
+              12.0
+            ],
+            [
+              76.501,
+              12.0
+            ],
+            [
+              76.501,
+              12.001
+            ],
+            [
+              76.5,
+              12.001
+            ],
+            [
+              76.5,
+              12.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "inspection-pin",
+      "properties": {
+        "name": "Survey Checkpoint"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.5005,
+          12.0005
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "bad-location",
+      "properties": {
+        "name": "Deliberate invalid coordinate"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          181,
+          12
+        ]
+      }
+    }
+  ]
+}

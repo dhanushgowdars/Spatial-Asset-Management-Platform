@@ -28,3 +28,77 @@
 .gi-detail-subheading{font-size:12px;letter-spacing:.025em;color:#166e62;margin:20px 0 8px;font-weight:760}
 .gi-detail-subheading+.gi-properties{margin-top:0}
 .gi-detail-no-attributes{font-size:12px;color:#708695;line-height:1.6}
+
+/* GEOINSIGHT_UNIFIED_C4B_V2 */
+.gi-unified-callout{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin:0 0 19px;padding:18px 21px;border:1px solid #bde3d9;border-radius:13px;background:linear-gradient(100deg,#e9f7f2,#f5fcfa)}
+.gi-unified-callout strong{font-size:14px;color:#085c55}
+.gi-unified-callout p{font-size:12px;color:#567078;margin:4px 0 0;line-height:1.6}
+.gi-unified-callout a{background:#08766a;color:#fff;text-decoration:none;padding:11px 16px;border-radius:9px;font-weight:750;font-size:12px}
+.gi-unified-callout a:hover{background:#07594f}
+.gi-unified-intelligence{margin:35px 0 0;scroll-margin-top:24px}
+.gi-unified-heading{display:flex;align-items:start;justify-content:space-between;gap:22px;flex-wrap:wrap;margin-bottom:18px}
+.gi-unified-heading h2{font-size:clamp(22px,2.5vw,29px);letter-spacing:-.045em;margin:6px 0;color:#132f3e}
+.gi-unified-heading p{color:#607786;font-size:13px;margin:5px 0 0;max-width:690px;line-height:1.7}
+.gi-unified-heading a{font-size:12px;color:#08776a;font-weight:800;text-decoration:none;white-space:nowrap;padding:9px 11px;border:1px solid #bddbd4;border-radius:9px;background:#fff}
+.gi-unified-badge{background:#dff5eb;color:#06735d;font-size:10px;font-weight:850;letter-spacing:.12em;border-radius:100px;padding:7px 11px;display:inline-block}
+@media(max-width:650px){.gi-unified-callout{align-items:start}.gi-unified-callout a{width:100%;text-align:center}}
+
+
+/* GeoInsight V6 – review panel and upload usability */
+/* Map is a full-width exploration canvas; detailed evidence belongs to the table. */
+.gi-explorer-grid{display:block}
+.gi-explorer-grid .gi-map-panel{width:100%}
+.gi-explorer-grid .gi-map-canvas{height:440px}
+.gi-verify-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(305px,.95fr);gap:14px;padding:0 19px 20px;align-items:start}
+.gi-verify-layout .gi-table-scroll{border:1px solid #dfe8ee;border-radius:12px;min-width:0;overflow-x:auto}
+.gi-verify-layout .gi-table{min-width:610px}
+.gi-verify-detail{border:1px solid #b9dfd5;border-radius:12px;background:linear-gradient(180deg,#f6fcf9,#ffffff);min-width:0;overflow:hidden;box-shadow:0 2px 12px #0d776109}
+.gi-verify-detail .gi-detail{max-height:515px;overflow-y:auto;padding:20px}
+.gi-verify-detail .gi-detail-empty{padding:36px 10px 28px}
+.gi-verify-detail .gi-detail-measure{color:#067a67}
+.gi-table tbody tr.selected{background:#dcf5eb;box-shadow:inset 4px 0 0 #087d70}
+.gi-table tbody tr:focus-visible{outline:2px solid #087d70;outline-offset:-3px}
+.gi-reset-action{color:#7a4440;border-color:#edd5cf}
+.gi-reset-action:hover{background:#fff4f1}
+@media(max-width:1150px){.gi-verify-layout{grid-template-columns:1fr}.gi-verify-detail .gi-detail{max-height:420px}}
+@media(max-width:760px){.gi-verify-layout{padding:0 10px 14px}.gi-explorer-grid .gi-map-canvas{height:340px}}
+
+
+/* GEOINSIGHT PHASE 1: match Measure input styling to the intelligence modules; preserve existing Measure KPI cards. */
+.gi-page .gi-upload{border:2px dashed #7acdbd;border-radius:16px;background:linear-gradient(145deg,#fff 0%,#edfaf6 100%);min-height:285px;padding:25px 20px;box-shadow:0 8px 22px rgba(17,80,82,.035);transition:background .16s ease,border-color .16s ease,box-shadow .16s ease}
+.gi-page .gi-upload:hover,.gi-page .gi-upload:focus-within,.gi-page .gi-upload.gi-upload-dragging{background:linear-gradient(145deg,#edfaf5,#e1f6ef);border-color:#078878;box-shadow:0 0 0 4px rgba(11,133,113,.09)}
+.gi-page .gi-upload-icon{width:56px;height:56px;border-radius:16px;background:#d4f3e9;box-shadow:0 8px 18px rgba(10,112,96,.12)}
+.gi-page .gi-upload h3{font-size:20px;line-height:1.32;font-weight:820;margin:17px 0 8px}
+.gi-page .gi-upload p{font-size:15px;line-height:1.6}
+.gi-page .gi-upload>small{font-size:13px;color:#527383;line-height:1.5}
+.gi-page .gi-upload .gi-btn-primary{font-size:16px;font-weight:780;padding:12px 23px;min-height:49px;border-radius:10px}
+.gi-analysis-heading{margin:27px 0 8px}
+.gi-analysis-heading h3{font-size:clamp(26px,2.35vw,33px);line-height:1.2;letter-spacing:-.035em;margin:7px 0 7px;color:#17364a;font-weight:830}
+.gi-analysis-heading p{font-size:15px;color:#506f80;line-height:1.6;margin:0}
+.gi-page .gi-stats{margin-top:16px}
+.gi-page .gi-stat-label{font-size:14px;line-height:1.35;font-weight:720}
+.gi-page .gi-stat-value{font-size:clamp(23px,2.25vw,31px);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.gi-page .gi-stat-note{font-size:12px;line-height:1.5}
+@media(max-width:650px){.gi-page .gi-upload{min-height:240px}.gi-page .gi-upload h3{font-size:18px}.gi-page .gi-upload p{font-size:14px}.gi-page .gi-stat-value{font-size:24px}}
+@media(prefers-reduced-motion:reduce){.gi-page .gi-upload{transition:none}}
+
+/* Feature-inspector reveal, without changing the map, geometry or source data. */
+.gi-page .gi-verify-detail.is-inspecting{animation:gi-inspector-reveal .45s cubic-bezier(.2,.85,.2,1);border-color:#84caba}
+.gi-page #records{scroll-margin-top:112px}
+@keyframes gi-inspector-reveal{from{opacity:.45;transform:translateX(18px);box-shadow:0 0 0 5px rgba(0,149,116,.11)}to{opacity:1;transform:translateX(0);box-shadow:0 5px 20px rgba(0,89,78,.09)}}
+@media(prefers-reduced-motion:reduce){.gi-page .gi-verify-detail.is-inspecting{animation:none}}
+
+
+/* GeoInsight shared results readability: keep Measure's original white, icon-led cards. */
+.gi-page .gi-stat{border-radius:13px;padding:21px;gap:15px;min-height:155px}
+.gi-page .gi-stat-icon{width:44px;height:44px;border-radius:11px}
+.gi-page .gi-stat-copy{gap:6px;align-content:start}
+.gi-page .gi-stat-label{font-size:16px;font-weight:790;color:#405f70}
+.gi-page .gi-stat-value{font-size:clamp(28px,2.15vw,36px);font-weight:850;line-height:1.18;color:#13384b}
+.gi-page .gi-stat-note{font-size:13.5px;line-height:1.5;color:#587485}
+@media(max-width:750px){
+  .gi-page .gi-stat{min-height:135px;padding:16px}
+  .gi-page .gi-stat-label{font-size:14.5px}
+  .gi-page .gi-stat-value{font-size:clamp(24px,5vw,31px)}
+  .gi-page .gi-stat-note{font-size:12.5px}
+}

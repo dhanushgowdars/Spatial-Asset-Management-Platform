@@ -7,6 +7,7 @@ import {
   EXAMPLE_DATASETS, downloadCSV, getDatasetBundle, sampleAsFile, uploadDataset,
 } from '../../services/geospatialService';
 import './Geospatial.css';
+import GeoNav from '../GeoNav/GeoNav';
 
 const RECENT_KEY = 'aereo:geospatial:recent:v1';
 const EMPTY = [];
@@ -85,7 +86,7 @@ function MapController({ features, selectedFeature, fitToken, selectionToken }) 
   return null;
 }
 
-function GeometryMap({ geojson, datasetId, selectedId, setSelectedId, selectionToken, visibility, setVisibility }) {
+function GeometryMap({ geojson, datasetId, selectedId, setSelectedId, onMapSelect, selectionToken, visibility, setVisibility }) {
   const [baseStyle, setBaseStyle] = useState('streets');
   const [fitToken, setFitToken] = useState(0);
   const features = useMemo(() => (geojson?.features || EMPTY).filter(item => item?.geometry && ['Point','MultiPoint','LineString','MultiLineString','Polygon','MultiPolygon'].includes(item.geometry.type)), [geojson]);
@@ -108,7 +109,7 @@ function GeometryMap({ geojson, datasetId, selectedId, setSelectedId, selectionT
     <div className={`gi-map-canvas ${baseStyle === 'geometry' ? 'is-geometry' : ''}`}>
       <MapContainer center={[20, 78]} zoom={4} maxZoom={21} zoomControl={false} scrollWheelZoom={true} className="gi-map">
         {baseStyle === 'streets' && <TileLayer key="streets" maxNativeZoom={19} maxZoom={21} attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>}
-        {!!renderedFeatures.length && <GeoJSON key={`${datasetId}:${selectedId ?? 'all'}:${visibility}`} data={mapData} style={onStyle} pointToLayer={pointToLayer} onEachFeature={(feature, layer) => { layer.on('click', () => { setSelectedId(String(feature.id)); setVisibility('selected'); }); layer.bindTooltip(String(featureName(feature)).slice(0, 90), { sticky: true, opacity: 0.95 }); }}/>}
+        {!!renderedFeatures.length && <GeoJSON key={`${datasetId}:${selectedId ?? 'all'}:${visibility}`} data={mapData} style={onStyle} pointToLayer={pointToLayer} onEachFeature={(feature, layer) => { layer.on('click', () => onMapSelect(String(feature.id))); layer.bindTooltip(String(featureName(feature)).slice(0, 90), { sticky: true, opacity: 0.95 }); }}/>}
         <MapController features={features} selectedFeature={selectedFeature} fitToken={fitToken} selectionToken={selectionToken}/>
         <ZoomControl position="bottomright"/>
       </MapContainer>
@@ -176,9 +177,17 @@ export default function Geospatial() {
 
   const inspectFeature = useCallback(item => {
     setSelectedId(String(item.id));
-    setVisibility('selected');
+    setVisibility('all');
     setSelectionToken(current => current + 1);
-    document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Keep the row inspector beside the measurements table; do not jump to the map.
+  }, []);
+
+  const selectFromMap = useCallback(id => {
+    setSelectedId(String(id));
+    setVisibility('all');
+    setSelectionToken(current => current + 1);
+    // Map clicks lead to the inspector now placed alongside the feature list.
+    requestAnimationFrame(() => document.getElementById('records')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }, []);
 
   const measurements = dataset?.measurements?.measurements ?? EMPTY;
@@ -255,6 +264,24 @@ export default function Geospatial() {
     });
   }, [run]);
 
+  const resetAnalysis = useCallback(() => {
+    controllerRef.current?.abort();
+    controllerRef.current = null;
+    setDataset(null);
+    setSelectedId(null);
+    setVisibility('all');
+    setSelectionToken(current => current + 1);
+    setBusy(false);
+    setBusyText('');
+    setError('');
+    setQuery('');
+    setFilter('all');
+    setDragging(false);
+    if (fileInput.current) fileInput.current.value = '';
+    // Recent history is intentionally preserved; reset affects only current analysis.
+    requestAnimationFrame(() => document.getElementById('import')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }, []);
+
   const onDrop = event => {
     event.preventDefault();
     setDragging(false);
@@ -263,6 +290,7 @@ export default function Geospatial() {
 
   return <div className="gi-page">
     <header className="gi-header"><Link className="gi-brand" to="/geospatial" aria-label="GeoInsight analysis home"><span className="gi-brand-symbol"><Icon name="layers" size={23}/></span><span className="gi-brand-name">Geo<span>Insight</span><small>GEOSPATIAL MEASUREMENT WORKSPACE</small></span></Link><nav className="gi-header-actions" aria-label="Resources"><span className="gi-header-label"><span className="gi-header-dot"/> FastAPI · Shapely · PROJ</span><a href="/docs" target="_blank" rel="noreferrer">API reference <Icon name="external" size={15}/></a></nav></header>
+    <GeoNav />
     <main className="gi-main">
       <section className="gi-intro"><div className="gi-eyebrow"><Icon name="crosshair" size={15}/> GEOINSIGHT / ANALYSIS WORKSPACE</div><h1>Geospatial measurement, <span>made verifiable.</span></h1><p>Convert survey files into accurate area and distance reports. Inspect geometries on a map, understand the CRS transformation and trace each result to its source feature.</p><div className="gi-intro-meta"><span><Icon name="check" size={15}/> KML · Shapefile · GeoJSON · KMZ</span><span><Icon name="check" size={15}/> Projected measurements</span><span><Icon name="check" size={15}/> API-verifiable results</span></div></section>
       <nav className="gi-workflow" aria-label="Analysis steps"><a className="active" href="#import"><b>01</b><span><strong>Import</strong><small>Upload or try sample</small></span></a><a href="#explore" className={dataset ? 'active' : ''}><b>02</b><span><strong>Explore</strong><small>Inspect mapped geometry</small></span></a><a href="#records" className={dataset ? 'active' : ''}><b>03</b><span><strong>Verify</strong><small>Review and export results</small></span></a></nav>
@@ -273,11 +301,12 @@ export default function Geospatial() {
         {error && <div role="alert" className="gi-error"><Icon name="alert" size={20}/><div><strong>File could not be processed</strong><p>{error}</p></div><button type="button" onClick={() => setError('')} aria-label="Dismiss error"><Icon name="close" size={18}/></button></div>}
       </section>
       {!dataset && !busy && <div className="gi-waiting"><span><Icon name="map" size={25}/></span><div><strong>Ready for analysis</strong><p>Upload KML, zipped Shapefile, GeoJSON or KMZ to inspect geometry and measurements.</p></div></div>}
-      {dataset && <section ref={resultRef} className="gi-results" aria-label="Geospatial analysis results" aria-live="polite"><div className="gi-report-head"><div><div className="gi-eyebrow-mini">ANALYSIS COMPLETE / {dataset.metadata.id.slice(0, 8)}</div><h2>{dataset.metadata.filename}</h2><p>{dataset.metadata.feature_count} features extracted <span aria-hidden="true">·</span> Source CRS: <strong>{dataset.metadata.crs || 'Unknown'}</strong></p></div><div className="gi-report-actions"><span className={`gi-result-status ${failed.length ? 'gi-result-attention' : ''}`}><Icon name={failed.length ? 'alert' : 'check'} size={16}/>{failed.length ? `${failed.length} feature${failed.length === 1 ? '' : 's'} need attention` : 'Processing complete'}</span><button className="gi-btn-outline" type="button" onClick={() => downloadCSV(dataset.metadata.filename, dataset.measurements)}><Icon name="download" size={18}/> Export CSV</button></div></div>
+      {dataset && <section ref={resultRef} className="gi-results" aria-label="Geospatial analysis results" aria-live="polite"><div className="gi-report-head"><div><div className="gi-eyebrow-mini">ANALYSIS COMPLETE / {dataset.metadata.id.slice(0, 8)}</div><h2>{dataset.metadata.filename}</h2><p>{dataset.metadata.feature_count} features extracted <span aria-hidden="true">·</span> Source CRS: <strong>{dataset.metadata.crs || 'Unknown'}</strong></p></div><div className="gi-report-actions"><span className={`gi-result-status ${failed.length ? 'gi-result-attention' : ''}`}><Icon name={failed.length ? 'alert' : 'check'} size={16}/>{failed.length ? `${failed.length} feature${failed.length === 1 ? '' : 's'} need attention` : 'Processing complete'}</span><button className="gi-btn-outline gi-reset-action" type="button" onClick={resetAnalysis} disabled={busy}><Icon name="close" size={16}/> Reset analysis</button><button className="gi-btn-outline" type="button" onClick={() => downloadCSV(dataset.metadata.filename, dataset.measurements)}><Icon name="download" size={18}/> Export CSV</button></div></div>
         {failed.length > 0 && <div role="status" className="gi-result-warning"><Icon name="alert" size={20}/><span>{failed.length} feature{failed.length !== 1 ? 's' : ''} could not be measured. Select the affected feature in the table to review the reason. Valid measurements are preserved.</span></div>}
+        <div className="gi-analysis-heading"><div className="gi-eyebrow-mini">RESULTS / PROJECTED MEASUREMENTS</div><h3>Analysis results</h3><p>Measurements returned by the live FastAPI service for the uploaded dataset.</p></div>
         <div className="gi-stats"><Stat icon="layers" title="Extracted features" value={dataset.metadata.feature_count.toLocaleString()} note="Features in uploaded dataset"/><Stat icon="area" title="Polygon area" value={polygons.length ? formatMeasure({ value: totalArea, unit: 'm2' }, true) : '—'} note={`${polygons.length} successfully measured polygon${polygons.length === 1 ? '' : 's'}`}/><Stat icon="route" title="Line length" value={lines.length ? formatMeasure({ value: totalLength, unit: 'm' }, true) : '—'} note={`${lines.length} successfully measured line${lines.length === 1 ? '' : 's'}`}/><Stat icon={failed.length ? 'alert' : 'check'} title="Measured features" value={`${measured.length} / ${measurements.length}`} note={`${failed.length} failed · ${measurements.length - measured.length - failed.length} not applicable`} variation={failed.length ? 'warning' : ''}/></div>
-        <section id="explore" className="gi-analysis-section"><div className="gi-section-head"><div><div className="gi-eyebrow-mini">STEP 02 / EXPLORE</div><h2>Geometry explorer</h2><p>See every mappable feature and select one to inspect its calculations and original attributes.</p></div><span className="gi-measurement-note"><Icon name="crosshair" size={16}/> Map in EPSG:4326</span></div><div className="gi-explorer-grid"><div className="gi-map-panel"><GeometryMap geojson={dataset.geojson} datasetId={dataset.metadata.id} selectedId={selectedId} setSelectedId={setSelectedId} selectionToken={selectionToken} visibility={visibility} setVisibility={setVisibility}/></div><div className="gi-detail-panel"><FeaturePanel item={selected} featureCount={measurements.length} metadata={dataset.metadata}/></div></div></section>
-        <section id="records" className="gi-records"><div className="gi-records-head"><div><div className="gi-eyebrow-mini">STEP 03 / VERIFY</div><h2>Feature measurements</h2><p>Every row represents a parsed feature. Use the filters, then select a row to inspect its provenance on the map.</p></div><div className="gi-table-filters"><input aria-label="Search features" placeholder="Search features" value={query} onChange={event => setQuery(event.target.value)}/><select aria-label="Filter features" value={filter} onChange={event => setFilter(event.target.value)}><option value="all">All features</option><option value="polygon">Polygons</option><option value="line">Lines</option><option value="point">Points</option><option value="failed">Failed</option></select></div></div><div className="gi-table-scroll"><table className="gi-table"><thead><tr><th>Feature</th><th>Geometry</th><th>Measurement</th><th>Status</th><th>Inspect</th></tr></thead><tbody>{displayed.length ? displayed.map(item => <tr key={`${item.index}:${item.id}`} className={String(item.id) === String(selectedId) ? 'selected' : ''} tabIndex={0} title={`Inspect ${featureName(item)} on the map`} onClick={() => inspectFeature(item)} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); inspectFeature(item); } }}><td><strong>{featureName(item)}</strong><small>ID: {item.id}</small></td><td><span className={`gi-geometry gi-geometry-${kindOf(item.geometry_type)}`}>{item.geometry_type}</span></td><td>{formatMeasure(item.measurement)}</td><td><Status status={item.status}/></td><td><button type="button" className="gi-inspect-btn" onClick={event => { event.stopPropagation(); inspectFeature(item); }} aria-label={`Inspect ${featureName(item)}`}><Icon name="crosshair" size={18}/></button></td></tr>) : <tr><td colSpan={5} className="gi-empty-table">No features match your filters.</td></tr>}</tbody></table></div></section>
+        <section id="explore" className="gi-analysis-section"><div className="gi-section-head"><div><div className="gi-eyebrow-mini">STEP 02 / EXPLORE</div><h2>Geometry explorer</h2><p>Explore all mapped geometry. Select a shape to highlight it and review its calculations beside the feature table below.</p></div><span className="gi-measurement-note"><Icon name="crosshair" size={16}/> Map in EPSG:4326</span></div><div className="gi-explorer-grid"><div className="gi-map-panel"><GeometryMap geojson={dataset.geojson} datasetId={dataset.metadata.id} selectedId={selectedId} setSelectedId={setSelectedId} onMapSelect={selectFromMap} selectionToken={selectionToken} visibility={visibility} setVisibility={setVisibility}/></div></div></section>
+        <section id="records" className="gi-records"><div className="gi-records-head"><div><div className="gi-eyebrow-mini">STEP 03 / VERIFY</div><h2>Feature measurements</h2><p>Select a feature to see its complete measurement, coordinate system, source attributes and provenance in the panel beside the table.</p></div><div className="gi-table-filters"><input aria-label="Search features" placeholder="Search features" value={query} onChange={event => setQuery(event.target.value)}/><select aria-label="Filter features" value={filter} onChange={event => setFilter(event.target.value)}><option value="all">All features</option><option value="polygon">Polygons</option><option value="line">Lines</option><option value="point">Points</option><option value="failed">Failed</option></select></div></div><div className="gi-verify-layout"><div className="gi-table-scroll"><table className="gi-table"><thead><tr><th>Feature</th><th>Geometry</th><th>Measurement</th><th>Status</th><th>Inspect</th></tr></thead><tbody>{displayed.length ? displayed.map(item => <tr key={`${item.index}:${item.id}`} className={String(item.id) === String(selectedId) ? 'selected' : ''} tabIndex={0} title={`Inspect ${featureName(item)} on the map`} onClick={() => inspectFeature(item)} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); inspectFeature(item); } }}><td><strong>{featureName(item)}</strong><small>ID: {item.id}</small></td><td><span className={`gi-geometry gi-geometry-${kindOf(item.geometry_type)}`}>{item.geometry_type}</span></td><td>{formatMeasure(item.measurement)}</td><td><Status status={item.status}/></td><td><button type="button" className="gi-inspect-btn" onClick={event => { event.stopPropagation(); inspectFeature(item); }} aria-label={`Inspect ${featureName(item)}`}><Icon name="crosshair" size={18}/></button></td></tr>) : <tr><td colSpan={5} className="gi-empty-table">No features match your filters.</td></tr>}</tbody></table></div><aside className={`gi-verify-detail${selected ? ' is-inspecting' : ''}`} aria-label="Selected feature details"><FeaturePanel key={selectedId ?? 'no-selection'} item={selected} featureCount={measurements.length} metadata={dataset.metadata}/></aside></div></section>
         <div className="gi-provenance"><Icon name="ruler" size={22}/><div><strong>How were the measurements calculated?</strong><p>Polygon area and line length are computed on projected geometries in metric units. Inspect any feature to see its source CRS and measurement CRS. The map uses WGS84 coordinates for display only.</p></div><a href="/docs" target="_blank" rel="noreferrer">Inspect REST API <Icon name="external" size={15}/></a></div>
       </section>}
       {recent.length > 0 && <section className="gi-recent"><div className="gi-section-head"><div><div className="gi-eyebrow-mini">REVISIT</div><h2>Recent analyses</h2><p>These five links are saved in this browser. Results are retrieved from the API, not browser-generated.</p></div></div><div className="gi-recent-list">{recent.map(file => <button type="button" key={file.id} disabled={busy} onClick={() => openRecent(file)}><Icon name="history" size={19}/><span><strong>{file.filename}</strong><small>ID: {file.id.slice(0, 8)}</small></span><Icon name="arrow" size={17}/></button>)}</div></section>}

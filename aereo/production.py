@@ -43,7 +43,7 @@ def create_production_app(*, frontend_dir: str | Path | None = None, database_ur
         candidate = (frontend_dir / web_path).resolve()
         if candidate.is_relative_to(frontend_dir) and candidate.is_file():
             return FileResponse(candidate)
-        if web_path == "geospatial":
+        if web_path in {"geospatial", "geospatial/intelligence", "geospatial/quality", "geospatial/compare", "geospatial/topology", "geospatial/routes", "geospatial/guide"}:
             return FileResponse(index)
         raise HTTPException(status_code=404, detail="Not found")
 

@@ -1,0 +1,119 @@
+
+.gg-shell{min-height:100vh;background:#f1f5f7;color:#163448;font:15px/1.65 Inter,"Segoe UI",system-ui,sans-serif}
+.gg-shell *{box-sizing:border-box}.gg-shell a:focus-visible,.gg-shell summary:focus-visible{outline:3px solid #0ca78b;outline-offset:3px}
+.gg-main{max-width:1450px;padding:32px clamp(14px,3vw,38px) 70px;margin:0 auto}
+.gg-hero{border:1px solid #d7e7e7;background:linear-gradient(117deg,#fff 34%,#e8f7f1);padding:clamp(24px,4vw,48px);border-radius:22px}
+.gg-eyebrow{color:#087e6f;font-size:12px;font-weight:850;letter-spacing:.14em}.gg-hero h1{font-size:clamp(33px,4vw,53px);line-height:1.1;letter-spacing:-.045em;margin:15px 0}.gg-hero h1 span{color:#078a78}.gg-hero>p{max-width:810px;font-size:17px;color:#4b6a78;margin:0}
+.gg-summary{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}.gg-summary>span{border:1px solid #cfe5e1;background:#fff9;padding:10px 14px;border-radius:9px;font-size:13px;color:#466b73}.gg-summary b{color:#0b7465;font-size:16px}
+.gg-toc{display:flex;gap:9px;flex-wrap:wrap;margin:20px 0 30px}.gg-toc a{font-size:13px;padding:11px 13px;border:1px solid #d5e5e6;border-radius:9px;background:white;text-decoration:none;color:#155c62;font-weight:740}.gg-toc a:hover{background:#e6f5f0}
+.gg-section{background:#fff;border:1px solid #dce8eb;border-radius:18px;padding:clamp(18px,2.6vw,32px);margin:18px 0;scroll-margin-top:90px}.gg-section-title>span{color:#0a856f;font-size:11px;font-weight:850;letter-spacing:.13em}.gg-section-title h2{font-size:clamp(23px,2.6vw,31px);line-height:1.25;letter-spacing:-.035em;margin:7px 0 9px}.gg-section-title p{color:#54707c;max-width:930px;margin:0 0 20px;font-size:15px}
+.gg-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin-top:22px}.gg-steps article{border:1px solid #dbe9e9;border-radius:12px;padding:18px;display:flex;gap:11px;background:#f8fbfb}.gg-steps article>strong{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:8px;background:#dcf3e9;color:#067865}.gg-steps h3,.gg-grid h3{font-size:16px;line-height:1.35;margin:1px 0 7px}.gg-steps p,.gg-grid p,.gg-page-card p,.gg-rules p,.gg-faq p{margin:0;font-size:14px;color:#516d78}
+.gg-choice{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}.gg-choice>div{background:#eaf7f1;border:1px solid #c5e3d6;border-radius:11px;padding:17px}.gg-choice p{margin:5px 0 0;color:#47716c;font-size:14px}
+.gg-pages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.gg-page-card{border:1px solid #dbe7eb;background:#fbfdfd;border-radius:13px;padding:20px}.gg-page-card:first-child{grid-column:1/-1;background:linear-gradient(112deg,#f3faf7,#fff)}.gg-page-top{display:flex;gap:11px;align-items:center;flex-wrap:wrap}.gg-page-top h3{font-size:19px;margin:0;letter-spacing:-.02em;flex:1}.gg-number{font-size:12px;border-radius:7px;padding:6px 9px;background:#dff4eb;color:#087361;font-weight:850}.gg-page-top a{font-size:13px;color:#067a6e;font-weight:800;text-decoration:none;border-bottom:1px solid #9bd4c7}.gg-page-card>p{margin:13px 0}.gg-page-card dl{margin:0;border-top:1px solid #e4eeee}.gg-page-card dl>div{display:grid;grid-template-columns:107px 1fr;gap:11px;padding:10px 0;border-bottom:1px solid #eaf0f1}.gg-page-card dt{font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:800;color:#687f8a}.gg-page-card dd{margin:0;font-size:13px;overflow-wrap:anywhere}
+.gg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:17px}.gg-grid>div{padding:18px;border:1px solid #dae8e9;background:#f7fbfa;border-radius:11px}.gg-note{font-size:14px;margin:20px 0 0;background:#e9f6f0;border-left:4px solid #0f9580;padding:14px 16px;border-radius:7px;color:#365f60}
+.gg-rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}.gg-rules article{padding:17px;background:#fbfdfd;border:1px solid #dbe8eb;border-radius:10px}.gg-rules strong{display:block;margin-bottom:7px;font-size:16px}.gg-rules code,.gg-endpoints code{background:#eff5f6;padding:2px 4px;border-radius:3px;font-size:12px}
+.gg-endpoints{margin:20px 0;display:grid;grid-template-columns:minmax(250px,.55fr) 1fr;border:1px solid #dfe9eb;border-radius:12px;overflow:hidden}.gg-endpoints>*{padding:11px 14px;border-bottom:1px solid #e9eff0}.gg-endpoints code{display:block;border-radius:0;background:#f3f9f8;color:#0c695e;overflow-wrap:anywhere}.gg-endpoints span{font-size:14px;color:#506c77}.gg-api-link{background:#087b6e;color:white;text-decoration:none;font-weight:750;padding:12px 17px;border-radius:9px;display:inline-block}
+.gg-faq{display:grid;gap:8px;margin-top:17px}.gg-faq details{border:1px solid #dce9eb;border-radius:10px;padding:12px 16px;background:#fafdfd}.gg-faq summary{font-weight:760;color:#22485b;cursor:pointer;font-size:15px}.gg-faq p{margin:11px 0 2px}.gg-footer{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:32px;color:#66808b;font-size:12px}.gg-footer a{color:#087a6e;font-weight:750}
+@media(max-width:780px){.gg-pages,.gg-rules,.gg-grid,.gg-choice{grid-template-columns:1fr}.gg-main{padding:18px 12px 45px}.gg-section{padding:19px}.gg-endpoints{grid-template-columns:1fr}.gg-endpoints>*{border-bottom:0}.gg-endpoints span{border-bottom:1px solid #e9eff0}.gg-page-card:first-child{grid-column:auto}}
+
+/* GeoInsight V9 guide: readable reference material and interactive module tour. */
+.gg-shell {font-size:16px;line-height:1.7;color:#17394c;background:linear-gradient(135deg,#eff8f7 0%,#f3f7fa 55%,#ecf6f4 100%)}
+.gg-main {max-width:1550px;padding:38px clamp(18px,3.2vw,45px) 78px}
+.gg-hero {border-radius:25px;padding:clamp(32px,4.2vw,57px);background:linear-gradient(120deg,#123a4c 2%,#075861 64%,#087b6e);border:1px solid #0c6670;color:#fff;box-shadow:0 18px 38px rgba(13,68,82,.15)}
+.gg-eyebrow {font-size:13px;color:#8ee9d6}
+.gg-hero h1 {font-size:clamp(43px,4.6vw,68px);font-weight:860;letter-spacing:-.043em;margin:19px 0 16px}
+.gg-hero h1 span {color:#a2f1dc}
+.gg-hero>p {font-size:19px;line-height:1.6;color:#e1f4f3}
+.gg-summary {margin-top:30px;gap:13px}
+.gg-summary>span {font-size:15px;color:#e1f4f3;background:rgba(255,255,255,.11);border:1px solid rgba(184,236,230,.45);padding:11px 16px;border-radius:11px}
+.gg-summary b {font-size:20px;color:#a5f2de}
+.gg-toc {margin:23px 0 32px;gap:10px}
+.gg-toc a {font-size:14px;padding:12px 17px;border-radius:11px;border-color:#c8dfdf;box-shadow:0 3px 10px rgba(15,74,80,.03)}
+.gg-section {border-radius:21px;padding:clamp(24px,3vw,38px);margin:21px 0;border-color:#ccdedf;box-shadow:0 7px 22px rgba(10,75,82,.045)}
+.gg-section-title>span {font-size:12px}
+.gg-section-title h2 {font-size:clamp(29px,2.9vw,38px);font-weight:860;letter-spacing:-.038em;color:#14374d}
+.gg-section-title p {font-size:16px;line-height:1.68;color:#4d6a77}
+.gg-steps {gap:15px}.gg-steps article {padding:21px;background:#f5fbf9;border:1px solid #cce5df;border-radius:15px}.gg-steps article>strong {height:40px;width:40px;font-size:16px}.gg-steps h3,.gg-grid h3 {font-size:19px;color:#173d4e;margin-bottom:10px}.gg-steps p,.gg-grid p,.gg-page-card p,.gg-rules p,.gg-faq p {font-size:15px;line-height:1.65}
+.gg-page-card {border-radius:16px;padding:24px;border-color:#c9e1dd}.gg-page-top h3 {font-size:21px;font-weight:810}.gg-number {font-size:14px;padding:8px 12px}.gg-page-top a {font-size:14px}
+.gg-page-card dl>div {grid-template-columns:126px minmax(0,1fr);gap:14px;padding:13px 0}.gg-page-card dt {font-size:12px;color:#517180}.gg-page-card dd {font-size:15px;line-height:1.55;color:#244a5c}
+.gg-grid {gap:15px}.gg-grid>div {padding:23px;border-radius:15px}.gg-rules {gap:15px}.gg-rules article {padding:23px;border-radius:15px}.gg-rules strong {font-size:18px}
+.gg-note {font-size:16px;border-left-width:5px;border-radius:12px;padding:20px}
+.gg-endpoints code {font-size:13px;padding:12px 15px}.gg-endpoints span {font-size:15px}
+.gg-faq {gap:11px}.gg-faq details {padding:18px 20px;background:linear-gradient(145deg,#fff,#f5faf9);border-color:#d1e4e2;border-radius:13px}.gg-faq summary {font-size:17px;font-weight:800;color:#194252;line-height:1.45}.gg-faq details[open] {border-color:#8dc7b9;box-shadow:inset 4px 0 0 #0b927a;background:#f1faf7}.gg-faq details p {margin:14px 0 4px;color:#416273}
+.gg-footer {font-size:14px}
+/* Navigation-enabled tour: every control changes content or navigates. */
+.gg-tour {margin:25px 0 26px;padding:27px 30px;background:#fff;border:1px solid #c3e0db;border-radius:22px;box-shadow:0 11px 29px rgba(9,69,74,.065)}
+.gg-tour-head {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:17px}
+.gg-tour-eyebrow {color:#087e70;font-size:12px;font-weight:860;letter-spacing:.14em}
+.gg-tour-controls {display:flex;gap:10px;align-items:center}
+.gg-tour-count {color:#416575;font-size:14px;font-weight:840;font-variant-numeric:tabular-nums;margin-right:7px}
+.gg-tour-controls button {border:1px solid #afcdc9;background:#f5fbf9;color:#0c655c;border-radius:11px;width:43px;height:43px;cursor:pointer;font-size:23px;font-weight:750;transition:background .14s}
+.gg-tour-controls button:hover {background:#dbf3e8;border-color:#65b59c}
+.gg-tour-content {display:grid;grid-template-columns:245px minmax(0,1fr);gap:29px;align-items:stretch;min-height:250px}
+.gg-tour-visual {display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;border-radius:16px;background:radial-gradient(circle at 25% 20%,#42bfae,#096a6b 70%);border:1px solid #139889;color:#fff;text-align:center;box-shadow:inset 0 1px #ffffff3b}
+.gg-tour-visual-icon {font-size:94px;line-height:1.1;color:#e2fff5}
+.gg-tour-visual>span:last-child {font-size:16px;font-weight:840;letter-spacing:.015em}
+.gg-tour-description {padding:5px 3px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.gg-tour-step {font-size:12px;font-weight:850;color:#068573;letter-spacing:.14em}
+.gg-tour-description h2 {font-size:clamp(26px,2.55vw,36px);font-weight:855;line-height:1.2;letter-spacing:-.034em;color:#15384d;margin:10px 0 12px}
+.gg-tour-description p {font-size:16px;max-width:790px;color:#476b7c;line-height:1.65;margin:0 0 21px}
+.gg-tour-description>a {display:inline-flex;align-items:center;background:#087b6c;color:#fff;border-radius:11px;padding:12px 18px;font-size:14px;font-weight:830;text-decoration:none;min-height:44px}
+.gg-tour-description>a:hover {background:#055e57}
+.gg-tour-dots {display:flex;align-items:stretch;justify-content:space-between;gap:7px;margin-top:20px}
+.gg-tour-dots button {flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #dae8e6;background:#f6faf9;border-radius:10px;padding:10px 7px;cursor:pointer;color:#4c6d78;font-size:12px;font-weight:780;transition:all .12s}
+.gg-tour-dots button.active {background:#ddf5eb;border-color:#7fcdb5;color:#056958;box-shadow:inset 0 -2px 0 #09937a}
+.gg-tour-dot {height:7px;width:7px;flex:0 0 7px;border-radius:50%;background:#8eb1ad}
+.gg-tour-dots button.active .gg-tour-dot {background:#068876}
+.gg-tour button:focus-visible,.gg-tour a:focus-visible {outline:3px solid #0d9a84;outline-offset:3px}
+@media(max-width:900px) {.gg-tour-content {grid-template-columns:190px 1fr;gap:19px}.gg-tour-visual-icon{font-size:75px}.gg-tour-dots {overflow-x:auto}.gg-tour-dots button {flex:0 0 auto;min-width:110px}}
+@media(max-width:650px) {.gg-hero h1 {font-size:41px}.gg-hero>p {font-size:16px}.gg-tour {padding:19px}.gg-tour-content {grid-template-columns:1fr;gap:16px}.gg-tour-visual {min-height:155px}.gg-tour-visual-icon{font-size:58px}.gg-tour-description h2{font-size:27px}.gg-tour-description p{font-size:15px}.gg-section{padding:21px}.gg-page-card dl>div{grid-template-columns:100px 1fr}.gg-section-title h2{font-size:27px}.gg-faq summary{font-size:16px}}
+@media(prefers-reduced-motion:reduce) {.gg-tour * {transition:none!important}}
+
+/* GeoInsight V10: cross-page hierarchy and accessible interactive guide. */
+.gg-page {font-size:16px;color:#15364a}
+.gg-page h1{font-size:clamp(40px,3.7vw,57px);line-height:1.1;letter-spacing:-.04em}
+.gg-section-title h2{font-size:clamp(28px,2.45vw,36px);line-height:1.17;letter-spacing:-.026em}
+.gg-section-title p,.gg-page p{line-height:1.65}
+.gg-faq details{background:#fff;border:1px solid #d9e8e9;border-radius:11px;margin-bottom:12px}
+.gg-faq summary{font-size:16px;min-height:53px;padding:16px 18px;font-weight:790}
+.gg-faq details[open]{border-color:#92d3c5;box-shadow:0 5px 20px rgba(6,100,87,.06)}
+.gg-faq details p{font-size:15px}
+.gg-pages article,.gg-grid>div{border-radius:12px}
+@media(max-width:650px){.gg-page h1{font-size:35px}.gg-section-title h2{font-size:27px}}
+
+/* GEOINSIGHT_GUIDE_REVIEW_V1: reviewer-friendly tour, typography, compact searchable FAQ. */
+.gg-shell{font-size:17px;line-height:1.68}
+.gg-section-title h2{font-size:clamp(31px,3.1vw,43px);line-height:1.17;letter-spacing:-.035em}
+.gg-section-title>span{font-size:13px}
+.gg-section-title p{font-size:17px}
+.gg-reviewer-intro,.gg-faq-tools{scroll-margin-top:110px}
+.gg-tour-progress{height:7px;width:100%;margin:19px 0 0;overflow:hidden;border-radius:999px;background:#e0edea}
+.gg-tour-progress>span{display:block;height:100%;background:linear-gradient(90deg,#087e70,#34b898);border-radius:999px;transition:width .28s ease}
+.gg-tour .gg-tour-dots button{min-height:45px;font-size:13px}
+.gg-tour-description h2{font-size:clamp(29px,2.8vw,40px)}
+.gg-tour-description p{font-size:17px}
+.gg-toc a{font-size:15px}
+.gg-faq-tools{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin:23px 0 18px}
+.gg-faq-search{display:flex;flex-direction:column;gap:7px;min-width:min(100%,290px);flex:1 1 320px;max-width:490px}
+.gg-faq-search>span{font-size:14px;font-weight:800;color:#2b5364}
+.gg-faq-search>input{min-height:48px;width:100%;border:1px solid #b9d7d7;border-radius:10px;background:#fff;padding:11px 14px;font:inherit;font-size:16px;color:#183a4d}
+.gg-faq-search>input:focus-visible{outline:3px solid #70cfb8;outline-offset:2px}
+.gg-faq-filters{display:flex;flex-wrap:wrap;gap:8px}
+.gg-faq-filters button{min-height:44px;padding:9px 13px;border-radius:10px;background:#f7faf9;border:1px solid #c9dfe0;color:#355e69;font:inherit;font-weight:780;font-size:14px;cursor:pointer}
+.gg-faq-filters button[aria-pressed="true"]{background:#e2f6ed;border-color:#57ae9b;color:#075d52;box-shadow:inset 0 -2px 0 #0c8a75}
+.gg-faq-filters button:hover{border-color:#269781}
+.gg-faq-meta{font-size:14px;font-weight:710;color:#557784;margin:4px 0 14px}
+.gg-faq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px 14px;align-items:start;margin-top:0}
+.gg-faq details{margin:0;min-width:0;padding:0;border:1px solid #d4e3e6;border-radius:13px;background:#fff;overflow:hidden;box-shadow:0 3px 11px rgba(15,73,83,.025)}
+.gg-faq details[open]{background:#f2faf7;border-color:#6bb9a9;box-shadow:0 7px 20px rgba(9,98,87,.07)}
+.gg-faq summary{display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none;cursor:pointer;min-height:72px;padding:17px 19px;font-size:17px;font-weight:800;line-height:1.42;color:#193e50}
+.gg-faq summary::-webkit-details-marker{display:none}
+.gg-faq summary:after{content:'+';font-size:23px;font-weight:500;display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:9px;background:#edf6f5;color:#087f70}
+.gg-faq details[open] summary:after{content:'−';background:#d2eee2;color:#076a5c}
+.gg-faq details p{padding:0 20px 19px;margin:0;font-size:16px;color:#385d6a;line-height:1.7}
+.gg-faq-empty{padding:25px;margin:0;border:1px dashed #9fc9c7;border-radius:12px;background:#f4faf8;font-size:16px;color:#36616a}
+.gg-faq details:focus-within{border-color:#26a488}
+.gg-shell button:focus-visible{outline:3px solid #0c9e86;outline-offset:3px}
+@media(max-width:900px){.gg-faq{grid-template-columns:1fr}.gg-faq-tools{align-items:stretch}.gg-faq-search{max-width:none}.gg-tour-description h2{font-size:30px}}
+@media(max-width:650px){.gg-shell{font-size:16px}.gg-section-title h2{font-size:30px}.gg-tour-description p{font-size:16px}.gg-faq summary{min-height:62px;font-size:16px}.gg-faq details p{font-size:15px}.gg-faq-filters button{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.gg-tour-progress>span{transition:none}}

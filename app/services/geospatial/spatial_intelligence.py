@@ -110,7 +110,19 @@ def _project_list(items: list[tuple[str, Any]], projection: CRS) -> list[tuple[s
     return result
 
 
-def _region_geojson(regions: list[tuple[str, Any]], projection: CRS) -> dict[str, Any]:
+# GEOINSIGHT_DERIVED_PROVENANCE_V1: derived results carry the same
+# calculation metadata as their parent analysis response.
+DERIVED_OPERATIONS = {
+    'added': 'Current footprint minus baseline footprint',
+    'removed': 'Baseline footprint minus current footprint',
+    'unchanged_overlap': 'Intersection of baseline and current footprints',
+    'overlap_area': 'Intersection of two survey parcels',
+    'uncovered_within_reference': 'Reference boundary minus surveyed footprint',
+    'outside_reference': 'Surveyed footprint minus reference boundary',
+}
+
+
+def _region_geojson(regions: list[tuple[str, Any]], projection: CRS, *, method: str) -> dict[str, Any]:
     inverse = Transformer.from_crs(projection, 'EPSG:4326', always_xy=True)
     collection = []
     for label, geom in regions:
@@ -121,7 +133,13 @@ def _region_geojson(regions: list[tuple[str, Any]], projection: CRS) -> dict[str
         display = transform(inverse.transform, geom)
         if display.is_empty or not all(isfinite(v) for v in display.bounds):
             raise AnalysisValidationError('Could not transform analysis result to WGS84')
-        collection.append({'type':'Feature', 'properties': {'category':label, 'area_m2': round(geom.area, 6)}, 'geometry': mapping(display)})
+        collection.append({'type':'Feature', 'properties': {
+            'category':label, 'area_m2': round(geom.area, 6),
+            '_status':'CALCULATED',
+            '_measurement_crs':projection.to_string(),
+            '_measurement_method':method,
+            '_operation':DERIVED_OPERATIONS.get(label, 'Projected geometry overlay'),
+        }, 'geometry': mapping(display)})
     return {'type':'FeatureCollection', 'features':collection}
 
 
@@ -171,7 +189,7 @@ def compare_surveys(baseline_data: dict[str, Any], current_data: dict[str, Any],
             'overlap_pct_of_current':round(100*overlap_area/current_area,4) if current_area else 0,
             'intersection_over_union_pct':round(100*overlap_area/union_area,4) if union_area else 0,
         },
-        'change_geojson':_region_geojson([('added',added),('removed',removed),('unchanged_overlap',overlap)],projection),
+        'change_geojson':_region_geojson([('added',added),('removed',removed),('unchanged_overlap',overlap)],projection,method='projected_planar_polygon_overlay'),
     }
 
 
@@ -228,7 +246,7 @@ def topology_report(data: dict[str, Any], *, file_id: str, reference_data: dict[
             'warnings':warnings, 'overlap_pair_count':actual_overlap_count,
             'overlap_issues':issues, 'issues_truncated':actual_overlap_count>len(issues),
             'gaps_evaluated':reference is not None, 'boundary_comparison':boundary_report,
-            'geojson':_region_geojson(shapes,projection)}
+            'geojson':_region_geojson(shapes,projection,method='projected_planar_topology')}
 
 
 def route_zone_report(route_data:dict[str,Any], zone_data:dict[str,Any], *, route_id:str, zone_id:str) -> dict[str,Any]:
@@ -268,7 +286,10 @@ def route_zone_report(route_data:dict[str,Any], zone_data:dict[str,Any], *, rout
         warnings.append('Partial analysis: invalid input features are excluded from routes or zones.')
     reverse = Transformer.from_crs(projection,'EPSG:4326',always_xy=True)
     features = [{'type':'Feature','properties':{'route_feature_id':line_id,
-               'zone_feature_id':polygon_id, 'length_m':_metric(line.length)},
+               'zone_feature_id':polygon_id, 'length_m':_metric(line.length),
+               '_status':'CALCULATED', '_measurement_crs':label,
+               '_measurement_method':'projected_planar_line_polygon_overlay',
+               '_operation':'Route intersection with selected zone'},
                'geometry':mapping(transform(reverse.transform,line))} for line_id,polygon_id,line in inside]
     return {'route_file_id':route_id,'zone_file_id':zone_id,'measurement_crs':label,
             'method':'projected_planar_line_polygon_overlay', 'warnings':warnings,

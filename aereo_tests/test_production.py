@@ -14,6 +14,11 @@ def test_same_origin_spa_and_api(tmp_path):
     with TestClient(app) as client:
         assert client.get("/", follow_redirects=False).headers["location"] == "/geospatial"
         assert client.get("/geospatial").status_code == 200
+        assert client.get("/geospatial/quality").status_code == 200
+        assert client.get("/geospatial/compare").status_code == 200
+        assert client.get("/geospatial/topology").status_code == 200
+        assert client.get("/geospatial/routes").status_code == 200
+        assert client.get("/geospatial/guide").status_code == 200
         assert "GeoInsight test shell" in client.get("/geospatial").text
         assert client.get("/assets/bundle.js").status_code == 200
         assert client.get("/samples/sample.kml").status_code == 200

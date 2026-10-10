@@ -62,6 +62,9 @@ jobs:
       - name: Install locked frontend dependencies
         run: npm ci
 
+      - name: Validate GIS demo contracts
+        run: node --test src/pages/SpatialIntelligence/demoContracts.test.mjs
+
       - name: Lint frontend
         run: npm run lint
 
