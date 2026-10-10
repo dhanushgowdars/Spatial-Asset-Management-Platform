@@ -11,6 +11,7 @@ from uuid import uuid4
 from fastapi import FastAPI, File, HTTPException, UploadFile, Depends
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
+from pydantic import BaseModel
 from sqlalchemy import JSON, DateTime, Integer, String, Text, create_engine, select, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
@@ -18,6 +19,24 @@ from app.services.geospatial import InvalidGeospatialUpload, process_upload
 from app.services.geospatial.engine import MAX_UPLOAD_BYTES
 from app.services.geospatial.quality import build_quality_report
 from app.services.geospatial.reporting import build_summary, build_geojson, build_csv
+from app.services.geospatial.spatial_intelligence import (
+    AnalysisValidationError, compare_surveys, topology_report, route_zone_report,
+)
+
+
+class CompareSurveysRequest(BaseModel):
+    baseline_file_id: str
+    current_file_id: str
+
+
+class TopologyRequest(BaseModel):
+    file_id: str
+    reference_file_id: str | None = None
+
+
+class RouteZoneRequest(BaseModel):
+    route_file_id: str
+    zone_file_id: str
 
 
 class Base(DeclarativeBase):
@@ -176,6 +195,38 @@ def create_app(database_url: str | None = None) -> FastAPI:
                          'X-Content-Type-Options': 'nosniff'},
             )
         raise HTTPException(status_code=422, detail='Export format must be csv or geojson')
+    @application.post('/api/analysis/compare')
+    def compare_survey_files(request: CompareSurveysRequest, db: Session = Depends(session)):
+        """Compare persisted polygon footprints, not untrusted inline coordinates."""
+        baseline = lookup(request.baseline_file_id, db)
+        current = lookup(request.current_file_id, db)
+        try:
+            return compare_surveys(baseline.result_json, current.result_json,
+                                   baseline_id=baseline.id, current_id=current.id)
+        except AnalysisValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @application.post('/api/analysis/topology')
+    def assess_topology(request: TopologyRequest, db: Session = Depends(session)):
+        survey = lookup(request.file_id, db)
+        reference = lookup(request.reference_file_id, db) if request.reference_file_id else None
+        try:
+            return topology_report(survey.result_json, file_id=survey.id,
+                                   reference_data=reference.result_json if reference else None,
+                                   reference_id=reference.id if reference else None)
+        except AnalysisValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @application.post('/api/analysis/route-zones')
+    def route_zones(request: RouteZoneRequest, db: Session = Depends(session)):
+        routes = lookup(request.route_file_id, db)
+        zones = lookup(request.zone_file_id, db)
+        try:
+            return route_zone_report(routes.result_json, zones.result_json,
+                                     route_id=routes.id, zone_id=zones.id)
+        except AnalysisValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     return application
 
 

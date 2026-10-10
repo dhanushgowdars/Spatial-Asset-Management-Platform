@@ -1,0 +1,25 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "haul-route",
+      "properties": {
+        "survey_id": "haul-route"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            74.99981581269914,
+            12.664640028323886
+          ],
+          [
+            75.00110512380523,
+            12.664640026093174
+          ]
+        ]
+      }
+    }
+  ]
+}
