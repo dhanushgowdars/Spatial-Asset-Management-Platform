@@ -23,3 +23,14 @@ frontend/dist/
 # OS Files
 .DS_Store
 Thumbs.db
+
+# V2 local-only work and generated test artifacts (source benchmark scripts remain trackable)
+/.runtime/
+/phase*/
+/geoinsight_v2_*/
+/README-upload.md
+/benchmarks/v2/output/
+*.sqlite3
+.env.*
+**/.env
+**/.env.*

@@ -1,4 +1,4 @@
-<!-- GEOINSIGHT_AEREO_SUBMISSION_README_V4: verified application screenshots and documentation -->
+<!-- GEOINSIGHT_V2_LOCAL_REVIEW_README_V5: screenshots, phases, benchmark results and locally validated V2 -->
 <div align="center">
 
 # GeoInsight
@@ -15,7 +15,7 @@ Upload geospatial files. Measure in the right coordinate system. Inspect *why* a
 
 ### [🚀 Open the live GeoInsight workspace →](https://geoinsight-aereo.onrender.com/geospatial)
 
-<sub>Public interactive demo · No account required · Render free-tier cold start may take time</sub>
+<sub>The links above point to the existing public submission. The V2 features and screenshots below were verified locally; public deployment of V2 is pending a separate release.</sub>
 
 </div>
 
@@ -47,6 +47,7 @@ Upload geospatial files. Measure in the right coordinate system. Inspect *why* a
 - [Real results: product showcase](#live-results--product-showcase)
 - [Problem and solution](#the-problem-and-the-solution)
 - [System architecture](#system-architecture)
+- [V2 architecture and data flows](docs/GEOINSIGHT_V2_ARCHITECTURE.md)
 - [Measurement pipeline and CRS](#how-geospatial-measurements-work)
 - [Advanced spatial analyses](#spatial-intelligence-beyond-the-assignment)
 - [Required API endpoints and examples](#api-reference--the-required-contract-first)
@@ -59,25 +60,60 @@ Upload geospatial files. Measure in the right coordinate system. Inspect *why* a
 
 ### What has been verified
 
-| **81 / 81** | **37 / 37** | **14 / 14** | **Live deployment** |
+| **160 / 160** | **4 / 4** | **Docker + PostgreSQL** | **Public submission** |
 | :---: | :---: | :---: | :---: |
-| Aereo backend tests passed | Local HTTP acceptance checks passed | Reported frontend logic/presentation tests passed | Public upload, export and post-restart retrieval verified |
+| V2 local Aereo backend tests passed | PDF polish tests passed locally | Production image, real upload/PDF and stored data after app restart verified locally | Previous deployed version; V2 not deployed yet |
 
-The counts above are from the reported October 2026 verification runs and synthetic reference datasets. See [testing and reproducibility](#testing-and-reproducibility) for the distinction between tested evidence and real-world survey certification.
+The V2 counts above are from **local** October 2026 checks with synthetic reference data. The publicly linked Render service is the previous submission until an explicit V2 deployment. These checks are not a security audit, high-scale load test or certified land survey. See [testing and reproducibility](#testing-and-reproducibility).
+
+### V2 development phases and verified outcomes (local release candidate)
+
+V2 hardening was performed **only** in `GeoInsight-Hardening-Lab`; the original submitted checkout and current public Render deployment were not modified during these local checks. Each phase below is implemented and locally verified, subject to the test scope explained in the [verification record](docs/GEOINSIGHT_V2_VERIFICATION.md).
+
+| Phase | Engineering change | Locally recorded evidence |
+| --- | --- | --- |
+| **1 — Baseline and realistic GIS workloads** | Deterministic GeoJSON, zipped Shapefile, KML and KMZ datasets; known-size oracle measurements; controlled Locust profiles | Medium **250 features**, large **1,200**, complex **80**, and format fixtures prepared. Low-concurrency baselines, not maximum throughput. |
+| **2 — Upload reliability** | Database commit moved off the async upload loop; bounded concurrent upload work with explicit overload response | With upload limit **1**, six concurrent requests produced **one 201** and **five 503** responses; health/recovery remained available. |
+| **3 — Request admission control** | In-memory per-peer upload rate limit (default **120/min**), bounded analyses (default **4**) | Verified **429** upload limit with `Retry-After` and **503** bounded analysis behavior. |
+| **4 — Measured-results read optimization** | Bounded TTL/LRU read cache, ETags and conditional **304** replies for read endpoints | Local large-measurements GET p95 was **~380 ms** in a baseline sample and **~17 ms** in a warm-cache sample. Different short runs; do **not** interpret as a certified speedup. |
+| **5 — Observability and reliability** | Request IDs, structured request logs, `Server-Timing`, error-path middleware coverage and regression tests | Request metadata verified for success and rejection paths; seven dedicated reliability regressions. |
+| **6 — Verifiable decision evidence** | Persisted-results verification JSON, SHA-256 provenance, Survey Evidence Passport, and Survey Change Decision Brief | Known-size comparison: **5,000 m² added**, **5,000 m² removed**, **5,000 m² unchanged**, net **0 m²**, IoU **33.33%**. |
+| **7 — Reviewer UX, PDF and production readiness** | 50-row browser pagination, selection-to-map focus, bounded PDF survey report, production Docker/PostgreSQL checks | **160/160** Aereo backend tests and **4/4** PDF polish tests; Docker upload/PDF passed; PostgreSQL record survived app restart. |
+
+**Benchmark caution:** the earlier 73-request zero-failure read observation was a separate run; it is **not** the 62-request baseline or 72-request post-cache sample tabulated below. All numbers are synthetic local measurements with small sample sizes. The raw Locust CSVs are retained locally and are intentionally excluded from the Git release; no production SLO or certified speedup is claimed.
+
+### Exact recorded Locust aggregates (local synthetic workloads)
+
+The following values are transcribed from the Locust `Aggregated` rows of the named CSVs in the isolated worktree. Each run uses its own workload, user count, duration and sample; **these are not a same-conditions cross-workload comparison**.
+
+| Dataset / profile | Requests | Failed | Mean (ms) | Median (ms) | P95 (ms) | Requests/s |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Medium, 2 users (`medium_2users_stats.csv`) | 58 | 0 | 504.03 | 290 | 1,500 | 1.993 |
+| Large, 1 user (`large_1user_stats.csv`) | 14 | 0 | 1,034.82 | 1,300 | 2,500 | 0.494 |
+| Complex, 1 user (`complex_1user_stats.csv`) | 24 | 0 | 301.89 | 310 | 550 | 0.865 |
+| Seeded reads before cache, 2 users (`seeded_reads_2users_stats.csv`) | 62 | 0 | 143.53 | 150 | 300 | 2.135 |
+| Seeded reads after Phase 4A cache, 2 users (`seeded_reads_phase4a_2users_stats.csv`) | 72 | 0 | 14.67 | 5 | 60 | 2.552 |
+
+**Observed read comparison:** mean latency **143.53 → 14.67 ms** (~**9.8×** lower), median **150 → 5 ms** (**30×** lower) and P95 **300 → 60 ms** (**5×** lower). The two read runs had different request counts (**62 vs 72**) and measured throughput (~2.135 vs ~2.552 requests/s). This is evidence of faster **local cached reads**, not a production guarantee, controlled multi-run study, general upload-throughput improvement or horizontal scalability. Locust's aggregate request count and Requests/s include whichever HTTP requests the profile made; do not mislabel them as file-upload throughput. The underlying CSVs remain local under `benchmarks/v2/output/` and are excluded from Git by default.
+
+
+**Deep dive:** [V2 verification record: methods, observed results, tests and limitations](docs/GEOINSIGHT_V2_VERIFICATION.md).
+
+
 
 ---
 
 ## Live results — product showcase
 
-These are **screenshots of the running React application** captured with known-size synthetic verification inputs. The backend generated every displayed value and map layer through real requests; these are not design mockups. The screenshots show **test evidence, not required input files**. Reviewers can use their own supported datasets in each workspace. **Select an image to open the full-resolution capture.**
+These are **screenshots captured from the locally verified V2 React application** using synthetic test inputs. The backend generated the displayed values and map layers through real requests; these are not interface mockups. The linked public Render instance may still show the earlier submission until V2 is separately deployed. **Select an image to view the full-resolution capture.**
 
 ### 1. Inspect geometry and measurement provenance
 
-[![GeoInsight geometry explorer highlighting the measured polygon in a Leaflet street map](docs/images/geoinsight/02-geometry-explorer.png)](docs/images/geoinsight/02-geometry-explorer.png)
+[![GeoInsight Geometry Explorer with a synthetic mixed KML polygon, line and point rendered on a Leaflet street map](docs/images/geoinsight/02-geometry-explorer.png)](docs/images/geoinsight/02-geometry-explorer.png)
 
-[![GeoInsight feature table and provenance panel showing 10,000 square metres with source and measurement CRS EPSG:32643](docs/images/geoinsight/03-feature-inspection.png)](docs/images/geoinsight/03-feature-inspection.png)
+[![GeoInsight feature inspector showing a measured LineString, a not-applicable Point, source CRS and metric measurement CRS](docs/images/geoinsight/03-feature-inspection.png)](docs/images/geoinsight/03-feature-inspection.png)
 
-The **map uses WGS84 for visualization**, while the feature inspector exposes the **projected measurement CRS, source record, geometry type, status and measured value**. A reviewer can select shapes or records and verify the calculation context.
+The **map uses WGS84 for visualization**, while the feature inspector exposes the **projected measurement CRS, source record, geometry type, status and measured value**. The `mixed.kml` example includes a polygon, a measurable line and a Point correctly shown as not requiring area/length. Table selection animates the map and brings the selected geometry into view.
 
 ### 2. Compare two surveys — quantify what changed
 
@@ -86,6 +122,12 @@ The **map uses WGS84 for visualization**, while the feature inspector exposes th
 [![Survey comparison map displaying removed area in red, unchanged overlap in blue, and added area in green](docs/images/geoinsight/05-survey-comparison-map.png)](docs/images/geoinsight/05-survey-comparison-map.png)
 
 This known-size verification scenario returns **5,000 m² added**, **5,000 m² removed**, and **5,000 m² unchanged**. Red, blue and green shapes are calculated difference and intersection geometries, not just colored numbers. **[Compare your own surveys →](https://geoinsight-aereo.onrender.com/geospatial/compare)**
+
+#### V2 survey change decision brief
+
+[![GeoInsight V2 decision brief identifying equal total area but different survey footprint, with 5,000 square metres each added, removed and shared](docs/images/geoinsight/09-survey-change-decision-brief.png)](docs/images/geoinsight/09-survey-change-decision-brief.png)
+
+The V2 brief distinguishes **zero net area change** from **identical boundaries**, records the overlap ratio (**33.33%**), and offers an evidence-linked JSON decision brief. This is a derived comparison of synthetic known-size polygons, not a certified boundary determination.
 
 <details>
 <summary><strong>Inspect derived-overlay provenance (actual UI capture)</strong></summary>
@@ -96,7 +138,28 @@ A derived result is explicitly marked as calculated overlay geometry and retains
 
 </details>
 
-### 3. Measure a route crossing a zone
+### 3. Evidence passport and mixed-geometry processing (V2)
+
+[![GeoInsight V2 survey Evidence Passport summarizing mixed KML measurements and the Download Survey PDF and Verification JSON actions](docs/images/geoinsight/10-mixed-geometry-evidence.png)](docs/images/geoinsight/10-mixed-geometry-evidence.png)
+
+The `mixed.kml` example extracts **three features**: a polygon, a line, and a Point. Exactly **two** require area/length measurement; the Point is explicitly **not applicable**. The **Survey Evidence Passport** summarizes status, warnings, CRS and uploaded-byte SHA-256, with downloadable JSON and a printable PDF built from stored results. PDF/JSON exports are evidence summaries, **not independent certification**.
+
+### 4. Inspect a 250-feature synthetic workload (V2)
+
+[![GeoInsight V2 measured 250 features with no failures, 2 square kilometres of summed polygon area and 6 kilometres of line length](docs/images/geoinsight/11-250-feature-evidence-passport.png)](docs/images/geoinsight/11-250-feature-evidence-passport.png)
+
+<details>
+<summary><strong>View the 250-feature map and five-page inspector</strong></summary>
+
+[![GeoInsight V2 displays 200 polygon geometries and 50 LineStrings on its interactive geometry map](docs/images/geoinsight/12-250-feature-map.png)](docs/images/geoinsight/12-250-feature-map.png)
+
+[![GeoInsight V2 paginated feature table showing page 5 of 5, with a 120 metre line selected for inspection](docs/images/geoinsight/13-250-feature-pagination.png)](docs/images/geoinsight/13-250-feature-pagination.png)
+
+</details>
+
+The synthetic workload contains **200 polygons × 10,000 m²** and **50 lines × 120 m** (2 km² *summed*, 6 km total). Pagination shows 50 rows per page **in the browser**, while map selection retains the full dataset. This is a functional workload demonstration, **not a maximum-capacity or concurrency benchmark**.
+
+### 5. Measure a route crossing a zone
 
 [![Routes and zones results reporting 1 route, 1 zone, 40 metres inside and 100 metres outside](docs/images/geoinsight/07-route-zone-results.png)](docs/images/geoinsight/07-route-zone-results.png)
 
@@ -144,67 +207,88 @@ Geospatial data is not automatically measurable just because a map can display i
 
 ## System architecture
 
-This is the **deployed GeoInsight architecture**, not a diagram of the older asset-management backend.
+**V2 architecture (locally verified release candidate).** The public Render URL still serves the earlier submitted version until a controlled deployment. V2 retains the same **one-image, same-origin React + FastAPI** deployment model, but adds admission control, a bounded read cache, observability and evidence exports. The boxes below are logical components inside the **same application process**, not separate microservices.
 
 ```mermaid
-flowchart LR
-    R([Reviewer / GIS engineer])
-    B["Browser<br/>React · Leaflet"]
-    subgraph SVC["One Render Docker web service · Uvicorn :8000"]
-        HOST["aereo/production.py<br/>Static React files + API mount"]
-        API["aereo/api.py<br/>FastAPI · REST · OpenAPI"]
-        ENGINE["engine.py<br/>Parse + validate uploads"]
-        PROJ["pyproj · Shapely<br/>CRS conversion + area/length"]
-        EXTRA["quality.py · reporting.py<br/>spatial_intelligence.py"]
-        ORM["SQLAlchemy persistence"]
+flowchart TB
+    USER["Reviewer / GIS engineer"] --> UI["React workspace + Leaflet<br/>measure / quality / compare / topology / routes"]
+    subgraph APP["GeoInsight V2 · one Docker image · Uvicorn / FastAPI"]
+        STATIC["production.py<br/>Serve compiled Vite frontend"]
+        TRACE["Request telemetry<br/>X-Request-ID · Server-Timing · structured logs"]
+        API["api.py<br/>REST routes + DB sessions"]
+        RATE["Upload rate limit<br/>per-peer, process-local · 429"]
+        UP["Bounded upload processing<br/>503 on overload · threaded DB write"]
+        GIS["GIS engine<br/>parse + validate · pyproj + Shapely"]
+        READ["GET measurements / GeoJSON<br/>bounded TTL/LRU cache · ETag / 304"]
+        ANALYSIS["Bounded spatial analyses<br/>compare / topology / route-zone"]
+        EVIDENCE["Evidence and exports<br/>verification JSON · ReportLab PDF · CSV"]
+        ORM["SQLAlchemy<br/>file metadata + persisted result JSON"]
     end
-    DB[("Render PostgreSQL<br/>Saved file records + result JSON")]
-    R --> B
-    B -->|"GET /geospatial"| HOST
-    HOST -->|"Vite build assets"| B
-    B -->|"/api/files/ and /api/analysis/*"| API
-    API -->|"Process uploaded data"| ENGINE
-    ENGINE --> PROJ
-    PROJ --> EXTRA
-    EXTRA -->|"Feature results + evidence"| API
-    API --> ORM
+    DB[("Database<br/>SQLite local · PostgreSQL validated")]
+    UI -->|"Frontend routes + assets"| STATIC
+    UI -->|"Same-origin API requests"| TRACE
+    TRACE --> API
+    API --> RATE
+    RATE --> UP
+    UP --> GIS
+    GIS --> ORM
+    API --> READ
+    READ --> ORM
+    API --> ANALYSIS
+    ANALYSIS --> GIS
+    ANALYSIS --> ORM
+    API --> EVIDENCE
+    EVIDENCE --> ORM
     ORM <--> DB
-    API -->|"JSON · GeoJSON · CSV"| B
-    classDef io fill:#E7F3FF,stroke:#2374B9,color:#10395B
-    classDef calc fill:#E8F6F2,stroke:#17836F,color:#12473D
-    classDef db fill:#FFF0DC,stroke:#BC742B,color:#63390E
-    class R,B io
-    class HOST,API,ENGINE,PROJ,EXTRA calc
+    classDef ui fill:#e8f3fd,stroke:#2670a6,color:#173a56
+    classDef work fill:#e8f6f1,stroke:#1c826c,color:#16493c
+    classDef db fill:#fff0dc,stroke:#b67b38,color:#6a451c
+    class USER,UI,STATIC ui
+    class TRACE,API,RATE,UP,GIS,READ,ANALYSIS,EVIDENCE work
     class ORM,DB db
 ```
 
-**How the pieces fit:** The multi-stage [`aereo/Dockerfile`](aereo/Dockerfile) builds the Vite frontend and Python backend into one image. [`aereo/production.py`](aereo/production.py) serves the compiled React application and the assessment API on the same HTTPS origin. The browser executes the React app and calls actual `/api/...` endpoints on the same origin. [`aereo/api.py`](aereo/api.py) handles requests, database sessions and result retrieval; the GIS calculations live in independent Python service modules. SQLAlchemy persists results in Render PostgreSQL so records can survive a web-service restart.
+The in-memory upload rate limiter and cache are **per-process**, not Redis or shared services. The frontend's 50-row pagination is **client-side**: the measurements API still returns the complete saved feature list. New verification JSON and PDF reports are views of the same **persisted** processing results; they do not independently recalculate geometry or certify land boundaries. SQLAlchemy stores records; **Shapely + pyproj** do the GIS computations, not PostGIS SQL.
 
-**Key distinction:** GeoInsight measures vector geometry in **Python (Shapely + pyproj)**, not via PostGIS. The original Spatial Asset Management Platform's JWT/RBAC and PostGIS API are **not running** at the GeoInsight URL; see [repository scope](#repository-scope-and-project-separation).
+For a component inventory, trust boundaries, cache/admission semantics and additional data-flow diagrams, see **[V2 architecture and data flows](docs/GEOINSIGHT_V2_ARCHITECTURE.md)**. For benchmark methods and the seven-phase results, see the **[V2 verification record](docs/GEOINSIGHT_V2_VERIFICATION.md)**.
 
-### Upload-to-result sequence
+### Upload-to-evidence sequence (V2)
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor R as Reviewer
     participant UI as React workspace
-    participant API as FastAPI
-    participant GIS as GIS engine
-    participant DB as PostgreSQL
-    R->>UI: Upload a supported geospatial file
+    participant API as FastAPI (request telemetry)
+    participant GATE as Upload rate and capacity controls
+    participant GIS as GIS engine (Shapely + pyproj)
+    participant DB as SQLAlchemy / database
+    participant OUT as Verification JSON / PDF renderer
+    R->>UI: Select KML, ZIP Shapefile, GeoJSON or KMZ
     UI->>API: POST /api/files/ (multipart field: file)
-    API->>GIS: Validate, parse, transform, measure
-    GIS-->>API: Feature records, CRS, metrics, diagnostics
-    API->>DB: Persist metadata and result JSON
-    DB-->>API: Commit succeeds
-    API-->>UI: 201 Created + file ID + resource URLs
+    API->>GATE: Check per-peer rate + bounded upload capacity
+    alt Rejected on rate or capacity
+        GATE-->>UI: 429 or 503, with Retry-After
+    else Admitted
+        GATE->>GIS: Parse, validate, project, measure
+        GIS-->>GATE: Features, CRS, results, diagnostics
+        GATE->>DB: Commit metadata + result JSON (off event loop)
+        DB-->>GATE: Saved file ID
+        GATE-->>UI: 201 Created + file ID
+    end
     UI->>API: GET /api/files/{id}/measurements/
-    API->>DB: Retrieve saved feature results
-    DB-->>API: Stored results
-    API-->>UI: Measurements and evidence
-    UI-->>R: Map, table, inspector, quality, exports
+    Note over API,DB: Bounded process-local cache; ETag + conditional 304 on cached reads
+    API-->>UI: Feature measurements or 304 Not Modified
+    R->>UI: Request verification PDF
+    UI->>API: GET /api/files/{id}/verification-report.pdf
+    API->>DB: Load stored results and SHA-256 provenance
+    DB-->>API: Persisted record
+    API->>OUT: Build bounded printable evidence (no re-measurement)
+    OUT-->>UI: PDF attachment (application/pdf)
+    UI-->>R: Readable survey report + documented limitations
 ```
+
+For **survey comparison**, a separate request reads *two persisted survey IDs*, computes their deterministic polygon difference/intersection using the existing spatial-intelligence module, and presents the derived shapes and Survey Change Decision Brief. Equal net area does **not** imply identical boundaries.
 
 ---
 
@@ -350,6 +434,8 @@ flowchart LR
 | `GET` | `/api/files/{id}/quality/` | Feature-level QA and dataset diagnostics |
 | `GET` | `/api/files/{id}/summary/` | Aggregate results and geometry counts |
 | `GET` | `/api/files/{id}/geojson/` | WGS84 GeoJSON for inspection/maps |
+| `GET` | `/api/files/{id}/verification-report/` | V2 persisted-results verification JSON, source SHA-256, CRS and limitations |
+| `GET` | `/api/files/{id}/verification-report.pdf` | V2 downloadable PDF survey summary and bounded feature appendix |
 | `GET` | `/api/files/{id}/export/?format=csv` | Download CSV; supports `format=geojson` |
 | `POST` | `/api/analysis/compare` | `{ "baseline_file_id": "…", "current_file_id": "…" }` |
 | `POST` | `/api/analysis/topology` | `{ "file_id": "…", "reference_file_id": "…" }` (reference optional) |
@@ -520,22 +606,22 @@ Swagger is at `http://127.0.0.1:18130/docs`. Without `AEREO_DATABASE_URL`, the A
 
 ## Testing and reproducibility
 
-The implementation was verified with **synthetic known-size geometry** and API/CI checks. In particular, the live public GeoJSON upload returned `COMPLETED`, one measured feature, **10,000 m² area** and **400 m perimeter** via export. The stored ID remained available after a web-service restart.
+The previous public submission was verified with **synthetic known-size geometry** and API/CI checks. Separately, the V2 hardening worktree passed **160/160 local Aereo backend regression tests** and **4/4 PDF polish tests**; local frontend ESLint and Vite build passed. The V2 production Docker image served five checked HTTP routes, handled a real Shapefile upload and generated a PDF. A separate PostgreSQL 16 container retained the 10,000 m² stored result after an **application-container restart** (the database container stayed running). The PDF formatting polish was applied **after** that Docker image build and therefore still requires a final image rebuild and live smoke test. The new V2 screenshots represent this local release candidate, not the currently deployed public service.
 
 | Check | Recorded verification |
 | --- | --- |
-| Isolated Aereo backend suite | **81 / 81 passed** |
-| Frontend logic/presentation tests | **14 / 14 passed** in reported local run |
-| Real local HTTP acceptance suite | **37 / 37 passed** |
-| Frontend lint and production build | Passed |
+| Isolated Aereo backend suite | **V2 local 160 / 160 passed**; original public submission previously reported 81 / 81 |
+| Frontend logic/presentation tests | Original submission **14/14** reported; V2 component-level pagination, decision-brief and Evidence Passport tests also passed in separate local runs (not asserted as one aggregate total) |
+| Real local HTTP acceptance suite | Original submission **37/37**; V2 additional HTTP 200/304/404/429/503, PDF and health probes passed locally |
+| Frontend lint and production build | Passed in local V2 worktree before final release audit |
 | Public reviewer routes | **7 / 7** checked routes returned HTTP 200 |
 | Cloud health | `{"status":"healthy"}` |
-| Cloud data persistence | Uploaded record retrievable after service restart |
+| Cloud data persistence | Original public submission retained its stored record; separately, V2 **local PostgreSQL 16** retained file data after application-container restart |
 | GitHub Actions | **Both API regression and React lint/build jobs passed** on `1bba33f` for the [feature branch](https://github.com/dhanushgowdars/Spatial-Asset-Management-Platform/actions/runs/38122862336) **and** [main](https://github.com/dhanushgowdars/Spatial-Asset-Management-Platform/actions/runs/38123212462) |
 
 The visible regression evidence is **test evidence**, not certified land-survey precision, security audit or load test. The current CI runs isolated Aereo backend tests plus a frontend contract test, lint and build; the larger local frontend tests are not all part of the CI workflow.
 
-Run the isolated checks:
+Run the isolated checks (the **V2** local worktree should use its explicit `.venv` interpreter for Python checks, and should never run the legacy root-level pytest suite):
 
 ```powershell
 python -m pytest aereo_tests -q
@@ -575,7 +661,7 @@ For verification methodology and automated coverage, see the **[Aereo regression
 
 **Boundaries of this release:**
 
-- The **public** API has **no authentication, per-user isolation or rate limiting**. Use public/synthetic datasets only; knowing a stored ID enables retrieval. Uploaded-result retention and deletion are not managed for end users.
+- The **publicly deployed submission** has **no authentication, per-user isolation or rate limiting**. The **locally tested V2** adds in-memory, per-peer upload rate limiting, bounded upload/analysis admission control, a bounded read cache with ETags, and request timing/IDs, but these safeguards do **not** replace authentication or user isolation and were **not deployed** at the time of this local screenshot review. Use public/synthetic data only; knowing a stored ID enables retrieval. Uploaded-result retention/deletion is not managed for end users.
 - Limits include 10 MiB compressed uploads, up to 5,000 features per upload and tighter limits for complex overlays. Inputs exceeding those boundaries can be rejected.
 - Metrics are **2D projected planar** results; not certified cadastral, geodesic over continental extents, elevation-aware, raster/DEM or photogrammetric reconstructions.
 - The free Render deployment may cold-start and its free PostgreSQL offering is temporary (30-day lifetime in the configured assessment plan). It should not be treated as long-lived production hosting.
@@ -593,6 +679,8 @@ Possible follow-ups—**not claimed as implemented**—include authentication an
 **This README is exclusively about the Aereo GeoInsight assessment.** This Git repository was originally created for a separate **Spatial Asset Management Platform** with asset CRUD, JWT/RBAC, PostGIS queries, audit logs and location history. Its original documentation has been preserved intact at **[docs/SPATIAL_ASSET_MANAGEMENT_PLATFORM.md](docs/SPATIAL_ASSET_MANAGEMENT_PLATFORM.md)**.
 
 The original platform's APIs are **not** part of the public GeoInsight deployment, and its unfinished frontend is **not** presented as a completed feature here. Splitting the two applications into independent repositories is future cleanup, not a requirement for this submission.
+
+**V2 release documentation:** [Changelog](CHANGELOG.md) · [Release notes (draft)](docs/GEOINSIGHT_V2_RELEASE_NOTES.md) · [Architecture](docs/GEOINSIGHT_V2_ARCHITECTURE.md) · [Verification evidence](docs/GEOINSIGHT_V2_VERIFICATION.md) · [MIT License](LICENSE)
 
 **Further technical context:** [GeoInsight supporting guide](docs/GEOINSIGHT_TECHNICAL_GUIDE.md) · [API implementation](aereo/api.py) · [GIS engine](app/services/geospatial/engine.py) · [Regression tests](aereo_tests/) · [CI workflow](.github/workflows/aereo-ci.yml)
 

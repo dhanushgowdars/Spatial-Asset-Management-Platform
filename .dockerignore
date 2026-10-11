@@ -16,3 +16,10 @@ node_modules
 *.log
 coverage
 htmlcov
+.runtime/
+phase*/
+benchmarks/
+aereo_tests/
+README-upload.md
+**/.env
+**/.env.*

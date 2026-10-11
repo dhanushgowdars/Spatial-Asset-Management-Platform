@@ -8,6 +8,9 @@ import {
 } from '../../services/geospatialService';
 import './Geospatial.css';
 import GeoNav from '../GeoNav/GeoNav';
+import SurveyEvidencePassport from './SurveyEvidencePassport';
+import { paginateMeasurements, MEASUREMENT_PAGE_SIZE } from './measurementPagination.mjs';
+import './measurementPagination.css';
 
 const RECENT_KEY = 'aereo:geospatial:recent:v1';
 const EMPTY = [];
@@ -171,30 +174,43 @@ export default function Geospatial() {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(1);
   const [dragging, setDragging] = useState(false);
   const [recent, setRecent] = useState(readRecent);
   useEffect(() => () => controllerRef.current?.abort(), []);
-
-  const inspectFeature = useCallback(item => {
-    setSelectedId(String(item.id));
-    setVisibility('all');
-    setSelectionToken(current => current + 1);
-    // Keep the row inspector beside the measurements table; do not jump to the map.
-  }, []);
-
-  const selectFromMap = useCallback(id => {
-    setSelectedId(String(id));
-    setVisibility('all');
-    setSelectionToken(current => current + 1);
-    // Map clicks lead to the inspector now placed alongside the feature list.
-    requestAnimationFrame(() => document.getElementById('records')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-  }, []);
 
   const measurements = dataset?.measurements?.measurements ?? EMPTY;
   const displayed = useMemo(() => measurements.filter(item => {
     const typeMatches = filter === 'all' || kindOf(item.geometry_type) === filter || (filter === 'failed' && item.status === 'FAILED');
     return typeMatches && `${item.id} ${item.geometry_type} ${JSON.stringify(item.properties)}`.toLowerCase().includes(query.trim().toLowerCase());
   }), [measurements, query, filter]);
+  const paging = useMemo(() => paginateMeasurements(displayed, page), [displayed, page]);
+  const inspectFeature = useCallback(item => {
+    setSelectedId(String(item.id));
+    setVisibility('all');
+    setSelectionToken(current => current + 1);
+    const index = displayed.findIndex(row => String(row.id) === String(item.id));
+    if (index >= 0) setPage(Math.floor(index / MEASUREMENT_PAGE_SIZE) + 1);
+    // Table clicks select and zoom the map, then bring its geometry into view.
+    // Honour reduced-motion preferences; avoid hiding the map beneath sticky navigation.
+    requestAnimationFrame(() => {
+      const explorer = document.getElementById('explore');
+      if (!explorer) return;
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+      const top = explorer.getBoundingClientRect().top + window.scrollY - 96;
+      window.scrollTo({ top: Math.max(0, top), behavior: reducedMotion ? 'auto' : 'smooth' });
+    });
+  }, [displayed]);
+
+  const selectFromMap = useCallback(id => {
+    setSelectedId(String(id));
+    setVisibility('all');
+    setSelectionToken(current => current + 1);
+    const index = displayed.findIndex(item => String(item.id) === String(id));
+    if (index >= 0) setPage(Math.floor(index / MEASUREMENT_PAGE_SIZE) + 1);
+    // Map clicks lead to the inspector now placed alongside the feature list.
+    requestAnimationFrame(() => document.getElementById('records')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }, [displayed]);
   const selected = measurements.find(item => String(item.id) === String(selectedId)) || null;
   const measured = measurements.filter(item => item.status === 'MEASURED');
   const failed = measurements.filter(item => item.status === 'FAILED');
@@ -214,6 +230,7 @@ export default function Geospatial() {
     const controller = new AbortController();
     controllerRef.current = controller;
     setBusy(true);
+    setPage(1);
     setBusyText('Preparing dataset…');
     setError('');
     setDataset(null);
@@ -276,6 +293,7 @@ export default function Geospatial() {
     setError('');
     setQuery('');
     setFilter('all');
+    setPage(1);
     setDragging(false);
     if (fileInput.current) fileInput.current.value = '';
     // Recent history is intentionally preserved; reset affects only current analysis.
@@ -302,11 +320,12 @@ export default function Geospatial() {
       </section>
       {!dataset && !busy && <div className="gi-waiting"><span><Icon name="map" size={25}/></span><div><strong>Ready for analysis</strong><p>Upload KML, zipped Shapefile, GeoJSON or KMZ to inspect geometry and measurements.</p></div></div>}
       {dataset && <section ref={resultRef} className="gi-results" aria-label="Geospatial analysis results" aria-live="polite"><div className="gi-report-head"><div><div className="gi-eyebrow-mini">ANALYSIS COMPLETE / {dataset.metadata.id.slice(0, 8)}</div><h2>{dataset.metadata.filename}</h2><p>{dataset.metadata.feature_count} features extracted <span aria-hidden="true">·</span> Source CRS: <strong>{dataset.metadata.crs || 'Unknown'}</strong></p></div><div className="gi-report-actions"><span className={`gi-result-status ${failed.length ? 'gi-result-attention' : ''}`}><Icon name={failed.length ? 'alert' : 'check'} size={16}/>{failed.length ? `${failed.length} feature${failed.length === 1 ? '' : 's'} need attention` : 'Processing complete'}</span><button className="gi-btn-outline gi-reset-action" type="button" onClick={resetAnalysis} disabled={busy}><Icon name="close" size={16}/> Reset analysis</button><button className="gi-btn-outline" type="button" onClick={() => downloadCSV(dataset.metadata.filename, dataset.measurements)}><Icon name="download" size={18}/> Export CSV</button></div></div>
+        <SurveyEvidencePassport key={dataset.metadata.id} dataset={dataset}/>
         {failed.length > 0 && <div role="status" className="gi-result-warning"><Icon name="alert" size={20}/><span>{failed.length} feature{failed.length !== 1 ? 's' : ''} could not be measured. Select the affected feature in the table to review the reason. Valid measurements are preserved.</span></div>}
         <div className="gi-analysis-heading"><div className="gi-eyebrow-mini">RESULTS / PROJECTED MEASUREMENTS</div><h3>Analysis results</h3><p>Measurements returned by the live FastAPI service for the uploaded dataset.</p></div>
         <div className="gi-stats"><Stat icon="layers" title="Extracted features" value={dataset.metadata.feature_count.toLocaleString()} note="Features in uploaded dataset"/><Stat icon="area" title="Polygon area" value={polygons.length ? formatMeasure({ value: totalArea, unit: 'm2' }, true) : '—'} note={`${polygons.length} successfully measured polygon${polygons.length === 1 ? '' : 's'}`}/><Stat icon="route" title="Line length" value={lines.length ? formatMeasure({ value: totalLength, unit: 'm' }, true) : '—'} note={`${lines.length} successfully measured line${lines.length === 1 ? '' : 's'}`}/><Stat icon={failed.length ? 'alert' : 'check'} title="Measured features" value={`${measured.length} / ${measurements.length}`} note={`${failed.length} failed · ${measurements.length - measured.length - failed.length} not applicable`} variation={failed.length ? 'warning' : ''}/></div>
         <section id="explore" className="gi-analysis-section"><div className="gi-section-head"><div><div className="gi-eyebrow-mini">STEP 02 / EXPLORE</div><h2>Geometry explorer</h2><p>Explore all mapped geometry. Select a shape to highlight it and review its calculations beside the feature table below.</p></div><span className="gi-measurement-note"><Icon name="crosshair" size={16}/> Map in EPSG:4326</span></div><div className="gi-explorer-grid"><div className="gi-map-panel"><GeometryMap geojson={dataset.geojson} datasetId={dataset.metadata.id} selectedId={selectedId} setSelectedId={setSelectedId} onMapSelect={selectFromMap} selectionToken={selectionToken} visibility={visibility} setVisibility={setVisibility}/></div></div></section>
-        <section id="records" className="gi-records"><div className="gi-records-head"><div><div className="gi-eyebrow-mini">STEP 03 / VERIFY</div><h2>Feature measurements</h2><p>Select a feature to see its complete measurement, coordinate system, source attributes and provenance in the panel beside the table.</p></div><div className="gi-table-filters"><input aria-label="Search features" placeholder="Search features" value={query} onChange={event => setQuery(event.target.value)}/><select aria-label="Filter features" value={filter} onChange={event => setFilter(event.target.value)}><option value="all">All features</option><option value="polygon">Polygons</option><option value="line">Lines</option><option value="point">Points</option><option value="failed">Failed</option></select></div></div><div className="gi-verify-layout"><div className="gi-table-scroll"><table className="gi-table"><thead><tr><th>Feature</th><th>Geometry</th><th>Measurement</th><th>Status</th><th>Inspect</th></tr></thead><tbody>{displayed.length ? displayed.map(item => <tr key={`${item.index}:${item.id}`} className={String(item.id) === String(selectedId) ? 'selected' : ''} tabIndex={0} title={`Inspect ${featureName(item)} on the map`} onClick={() => inspectFeature(item)} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); inspectFeature(item); } }}><td><strong>{featureName(item)}</strong><small>ID: {item.id}</small></td><td><span className={`gi-geometry gi-geometry-${kindOf(item.geometry_type)}`}>{item.geometry_type}</span></td><td>{formatMeasure(item.measurement)}</td><td><Status status={item.status}/></td><td><button type="button" className="gi-inspect-btn" onClick={event => { event.stopPropagation(); inspectFeature(item); }} aria-label={`Inspect ${featureName(item)}`}><Icon name="crosshair" size={18}/></button></td></tr>) : <tr><td colSpan={5} className="gi-empty-table">No features match your filters.</td></tr>}</tbody></table></div><aside className={`gi-verify-detail${selected ? ' is-inspecting' : ''}`} aria-label="Selected feature details"><FeaturePanel key={selectedId ?? 'no-selection'} item={selected} featureCount={measurements.length} metadata={dataset.metadata}/></aside></div></section>
+        <section id="records" className="gi-records"><div className="gi-records-head"><div><div className="gi-eyebrow-mini">STEP 03 / VERIFY</div><h2>Feature measurements</h2><p>Select a feature to see its complete measurement, coordinate system, source attributes and provenance in the panel beside the table.</p></div><div className="gi-table-filters"><input aria-label="Search features" placeholder="Search features" value={query} onChange={event => { setQuery(event.target.value); setPage(1); }}/><select aria-label="Filter features" value={filter} onChange={event => { setFilter(event.target.value); setPage(1); }}><option value="all">All features</option><option value="polygon">Polygons</option><option value="line">Lines</option><option value="point">Points</option><option value="failed">Failed</option></select></div></div>{paging.total > MEASUREMENT_PAGE_SIZE && <div className="gi-pagination" role="navigation" aria-label="Feature table pagination"><span className="gi-pagination-note">Showing {paging.start}–{paging.end} of {paging.total.toLocaleString('en-IN')} matching features · 50 per page (display only)</span><div className="gi-pagination-actions"><button type="button" disabled={paging.page === 1} onClick={() => setPage(paging.page - 1)}>← Previous</button><span>Page {paging.page} of {paging.pageCount}</span><button type="button" disabled={paging.page === paging.pageCount} onClick={() => setPage(paging.page + 1)}>Next →</button></div></div>}<div className="gi-verify-layout"><div className="gi-table-scroll"><table className="gi-table"><thead><tr><th>Feature</th><th>Geometry</th><th>Measurement</th><th>Status</th><th>Inspect</th></tr></thead><tbody>{paging.rows.length ? paging.rows.map(item => <tr key={`${item.index}:${item.id}`} className={String(item.id) === String(selectedId) ? 'selected' : ''} tabIndex={0} title={`Inspect ${featureName(item)} on the map`} onClick={() => inspectFeature(item)} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); inspectFeature(item); } }}><td><strong>{featureName(item)}</strong><small>ID: {item.id}</small></td><td><span className={`gi-geometry gi-geometry-${kindOf(item.geometry_type)}`}>{item.geometry_type}</span></td><td>{formatMeasure(item.measurement)}</td><td><Status status={item.status}/></td><td><button type="button" className="gi-inspect-btn" onClick={event => { event.stopPropagation(); inspectFeature(item); }} aria-label={`Inspect ${featureName(item)}`}><Icon name="crosshair" size={18}/></button></td></tr>) : <tr><td colSpan={5} className="gi-empty-table">No features match your filters.</td></tr>}</tbody></table></div><aside className={`gi-verify-detail${selected ? ' is-inspecting' : ''}`} aria-label="Selected feature details"><FeaturePanel key={selectedId ?? 'no-selection'} item={selected} featureCount={measurements.length} metadata={dataset.metadata}/></aside></div></section>
         <div className="gi-provenance"><Icon name="ruler" size={22}/><div><strong>How were the measurements calculated?</strong><p>Polygon area and line length are computed on projected geometries in metric units. Inspect any feature to see its source CRS and measurement CRS. The map uses WGS84 coordinates for display only.</p></div><a href="/docs" target="_blank" rel="noreferrer">Inspect REST API <Icon name="external" size={15}/></a></div>
       </section>}
       {recent.length > 0 && <section className="gi-recent"><div className="gi-section-head"><div><div className="gi-eyebrow-mini">REVISIT</div><h2>Recent analyses</h2><p>These five links are saved in this browser. Results are retrieved from the API, not browser-generated.</p></div></div><div className="gi-recent-list">{recent.map(file => <button type="button" key={file.id} disabled={busy} onClick={() => openRecent(file)}><Icon name="history" size={19}/><span><strong>{file.filename}</strong><small>ID: {file.id.slice(0, 8)}</small></span><Icon name="arrow" size={17}/></button>)}</div></section>}

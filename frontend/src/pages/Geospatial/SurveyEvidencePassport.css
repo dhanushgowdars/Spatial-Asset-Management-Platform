@@ -1,0 +1,28 @@
+.gi-passport{margin:20px 0 30px;padding:24px;border:1px solid #bddbd2;border-radius:18px;background:linear-gradient(110deg,#f4fbf8 0%,#ffffff 64%);color:#153a36;box-shadow:0 7px 24px rgba(12,63,55,.04)}
+.gi-passport-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px}
+.gi-passport-eyebrow{font-size:11px;letter-spacing:.13em;font-weight:800;color:#087665;margin-bottom:8px}
+.gi-passport h3{font-size:21px;font-weight:750;line-height:1.3;margin:0 0 7px;color:#153a36}
+.gi-passport-top p{font-size:13px;max-width:650px;color:#526963;line-height:1.65;margin:0}
+.gi-passport-download{border:1px solid #087765;background:#0b7463;color:white;border-radius:10px;padding:11px 16px;min-height:42px;font-size:13px;font-weight:700;cursor:pointer;white-space:normal;text-align:center}
+.gi-passport-download:focus-visible{outline:3px solid #f3b943;outline-offset:2px}
+.gi-passport-download:disabled{opacity:.6;cursor:wait}
+.gi-passport-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}
+.gi-passport-grid>div{border:1px solid #e0eee9;border-radius:12px;padding:13px 14px;background:#fff;min-width:0}
+.gi-passport-grid span,.gi-passport-grid strong,.gi-passport-grid small{display:block}
+.gi-passport-grid span{color:#537069;font-size:11px;font-weight:650;margin-bottom:7px}
+.gi-passport-grid strong{font-size:21px;color:#163e36;overflow-wrap:anywhere;line-height:1.3}
+.gi-passport-grid strong.gi-passport-crs{font-size:14px;line-height:1.5}
+.gi-passport-grid small{font-size:11px;color:#647a73;margin-top:6px;line-height:1.45}
+.gi-passport-footer{border-top:1px solid #dbece6;padding-top:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;color:#5c726e;font-size:11px;line-height:1.6}
+.gi-passport-footer span{min-width:0;overflow-wrap:anywhere}
+.gi-passport-footer code{font-size:10px;color:#31584f;overflow-wrap:anywhere;word-break:break-all}
+.gi-passport-error,.gi-passport-success{margin:12px 0 0;font-size:12px;font-weight:600;line-height:1.5}
+.gi-passport-error{color:#9b1c1c}.gi-passport-success{color:#086b52}
+@media(max-width:860px){.gi-passport-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.gi-passport{padding:16px}.gi-passport-grid{grid-template-columns:minmax(0,1fr)}.gi-passport-download{width:100%}}
+
+/* Phase 7B: additive PDF export beside the provenance JSON download. */
+.gi-passport-downloads{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
+.gi-passport-pdf{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #087665;border-radius:10px;padding:11px 16px;min-height:42px;background:#fff;color:#086e60;text-decoration:none;font-size:13px;font-weight:750;text-align:center}
+.gi-passport-pdf:hover{background:#e8f7f2}.gi-passport-pdf:focus-visible{outline:3px solid #f3b943;outline-offset:2px}
+@media(max-width:520px){.gi-passport-downloads{width:100%}.gi-passport-pdf{width:100%}}
