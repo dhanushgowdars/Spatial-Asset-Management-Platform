@@ -33,13 +33,13 @@ Upload geospatial files. Measure in the right coordinate system. Inspect *why* a
 | **Guide** | Follow a walkthrough, learn the assumptions, and explore example scenarios | [Reviewer guide →](https://geoinsight-aereo.onrender.com/geospatial/guide) |
 
 > [!TIP]
-> **Start here (3 minutes):** Open **Measure** → select the included *100 m square* example or upload [`mixed.kml`](aereo_samples/mixed.kml) / [`plot-utm43n.zip`](aereo_samples/plot-utm43n.zip) → inspect **10,000 m²**, the projected CRS, and the map → open **Compare** and run its bundled sample → use **[Swagger](https://geoinsight-aereo.onrender.com/docs)** to test the required APIs yourself. All sample analyses go through the real backend; expected fixture values are checked against returned results, not substituted for them.
+> **Start here (3 minutes):** **[Open GeoInsight Measure](https://geoinsight-aereo.onrender.com/geospatial)** → upload **your own KML, zipped ESRI Shapefile, GeoJSON or KMZ** → inspect the returned features, area/length (where applicable), source and measurement CRS, map, and downloadable results. Explore the other workspaces using your own compatible datasets, or test the three required endpoints in **[Swagger](https://geoinsight-aereo.onrender.com/docs)**. No provided example file is required. **Use public or synthetic data only**: this assessment demo does not have per-user access controls.
 
 ### A real measurement, not a mockup
 
 [![GeoInsight live measurement results: 100 m by 100 m Shapefile polygon measured as 10,000 square metres](docs/images/geoinsight/01-measurement-results.png)](docs/images/geoinsight/01-measurement-results.png)
 
-*Live frontend capture — `plot-utm43n.zip` · 1 successfully measured polygon · **10,000 m²** · EPSG:32643 · 0 failures. [Run this sample yourself →](https://geoinsight-aereo.onrender.com/geospatial)*
+*Actual frontend capture from a synthetic 100 m × 100 m verification dataset · 1 successfully measured polygon · **10,000 m²** · EPSG:32643 · 0 failures. **[Upload your own survey file →](https://geoinsight-aereo.onrender.com/geospatial)**. Your results depend on your input.*
 
 <details>
 <summary><strong>Browse this README</strong></summary>
@@ -69,7 +69,7 @@ The counts above are from the reported October 2026 verification runs and synthe
 
 ## Live results — product showcase
 
-These are **screenshots of the running React application**, taken while testing bundled synthetic GIS datasets. The backend generated the displayed results through real requests; none of the values or map layers below is an invented design mockup. **Select an image to open the full-resolution capture.**
+These are **screenshots of the running React application** captured with known-size synthetic verification inputs. The backend generated every displayed value and map layer through real requests; these are not design mockups. The screenshots show **test evidence, not required input files**. Reviewers can use their own supported datasets in each workspace. **Select an image to open the full-resolution capture.**
 
 ### 1. Inspect geometry and measurement provenance
 
@@ -85,7 +85,7 @@ The **map uses WGS84 for visualization**, while the feature inspector exposes th
 
 [![Survey comparison map displaying removed area in red, unchanged overlap in blue, and added area in green](docs/images/geoinsight/05-survey-comparison-map.png)](docs/images/geoinsight/05-survey-comparison-map.png)
 
-The verified *shifted-square* sample returns **5,000 m² added**, **5,000 m² removed**, and **5,000 m² unchanged**. Red, blue and green shapes show the actual difference and intersection geometry, not just colored numbers. **[Try the comparison →](https://geoinsight-aereo.onrender.com/geospatial/compare)**
+This known-size verification scenario returns **5,000 m² added**, **5,000 m² removed**, and **5,000 m² unchanged**. Red, blue and green shapes are calculated difference and intersection geometries, not just colored numbers. **[Compare your own surveys →](https://geoinsight-aereo.onrender.com/geospatial/compare)**
 
 <details>
 <summary><strong>Inspect derived-overlay provenance (actual UI capture)</strong></summary>
@@ -102,7 +102,7 @@ A derived result is explicitly marked as calculated overlay geometry and retains
 
 [![Route-zone map showing navy full route, dashed amber restricted polygon and green inside-zone segment](docs/images/geoinsight/08-route-zone-map.png)](docs/images/geoinsight/08-route-zone-map.png)
 
-A **140 m route** crosses one polygonal zone: **40 m inside** and **100 m outside**. The overlay is represented as geometry in a shared projected CRS and visualized as separate map layers. **[Try routes and zones →](https://geoinsight-aereo.onrender.com/geospatial/routes)**
+In this verified scenario, a **140 m route** crosses a polygonal zone: **40 m inside** and **100 m outside**. The actual intersection geometry is calculated in a shared projected CRS and displayed as a separate map layer. **[Analyse your own routes and zones →](https://geoinsight-aereo.onrender.com/geospatial/routes)**
 
 *Data note: these screenshots use synthetic reference geometry. They demonstrate working GIS processing but are not independent field-survey certification.*
 
@@ -192,7 +192,7 @@ sequenceDiagram
     participant API as FastAPI
     participant GIS as GIS engine
     participant DB as PostgreSQL
-    R->>UI: Upload file / choose bundled sample
+    R->>UI: Upload a supported geospatial file
     UI->>API: POST /api/files/ (multipart field: file)
     API->>GIS: Validate, parse, transform, measure
     GIS-->>API: Feature records, CRS, metrics, diagnostics
@@ -274,7 +274,7 @@ The implemented method is **2D projected planar geometry**, not a geodesic/terra
 
 ### Worked example — a known-size square
 
-The supplied **`plot-utm43n.zip` zipped Shapefile** contains a synthetic **100 m × 100 m** reference polygon. In the live screenshot, its **source and measurement CRS are both EPSG:32643** (UTM zone 43N). The verified measurement is:
+For reproducibility, the displayed verification run used a synthetic **100 m × 100 m** polygon in a zipped Shapefile. In the screenshot, its **source and measurement CRS are both EPSG:32643** (UTM zone 43N). This is **one test case, not a required file or a fixed result for other uploads**. The verified measurement is:
 
 | Field | Result |
 | --- | ---: |
@@ -359,14 +359,15 @@ flowchart LR
 
 ### Copy, run, inspect (PowerShell)
 
-The sample files are already present in the repository. Run from the project root:
+Use a **local file of your choice** (`.kml`, `.zip` containing an ESRI Shapefile, `.geojson`, or `.kmz`). The following commands prompt for its full path, upload it to the public assessment API, then retrieve the actual results. **Do not upload confidential or personal survey data.**
 
 ```powershell
 $base = "https://geoinsight-aereo.onrender.com"
-$sample = (Resolve-Path ".\aereo_samples\plot-utm43n.zip").Path
+$filePath = (Read-Host "Full path to your KML, zipped Shapefile, GeoJSON or KMZ file").Trim('"')
+if (-not (Test-Path -LiteralPath $filePath -PathType Leaf)) { throw "File not found: $filePath" }
 
-# Upload the required zipped-Shapefile format.
-$response = curl.exe -fsS -F "file=@$sample" "$base/api/files/" | ConvertFrom-Json
+# Upload the file you selected; .kml and zipped Shapefile are the required formats.
+$response = curl.exe -fsS -F "file=@$filePath" "$base/api/files/" | ConvertFrom-Json
 $id = $response.id
 $response | Format-List id, filename, status, feature_count, successful_measurements
 
@@ -376,7 +377,7 @@ $results = Invoke-RestMethod "$base/api/files/$id/measurements/"
 $results.measurements | Select-Object id, geometry_type, crs, measurement_crs, status, measurement
 ```
 
-For a KML test, change `$sample` to `(Resolve-Path ".\aereo_samples\mixed.kml").Path`. Upload IDs are generated for each run, so the ID shown in your output will differ from other examples.
+Use the same steps for **any supported upload type**. The returned file ID and measurements depend on your input; the API generates a new ID for each upload.
 
 <details>
 <summary><strong>Example response shape (illustrative, abbreviated)</strong></summary>
@@ -384,7 +385,7 @@ For a KML test, change `$sample` to `(Resolve-Path ".\aereo_samples\mixed.kml").
 ```json
 {
   "file_id": "<generated-32-character-id>",
-  "filename": "sample.geojson",
+  "filename": "survey.geojson",
   "crs": "EPSG:4326",
   "feature_count": 1,
   "status": "COMPLETED",
@@ -420,7 +421,7 @@ Invoke-RestMethod "$base/api/files/$id/quality/"
 Invoke-RestMethod "$base/api/files/$id/summary/"
 ```
 
-To compare surveys, upload [`c4a_baseline.geojson`](aereo_samples/c4a_baseline.geojson) and [`c4a_current.geojson`](aereo_samples/c4a_current.geojson), then submit their saved IDs:
+To compare **your own two compatible polygon surveys**, upload each file using the **Measure** or **Compare** interface (or `POST /api/files/`), then supply the two returned IDs:
 
 ```powershell
 $body = @{ baseline_file_id = "<baseline-id>"; current_file_id = "<current-id>" } | ConvertTo-Json
@@ -557,7 +558,7 @@ npm --prefix frontend run build
 - CSV/GeoJSON outputs, persisted API contracts, overlay comparisons, topology reference semantics and route/zone length conservation.
 - Production SPA deep links and CI frontend lint/build compatibility.
 
-Explore source fixtures: [`aereo_samples/`](aereo_samples/) · [`frontend/public/samples/`](frontend/public/samples/) · [`aereo_tests/`](aereo_tests/).
+For verification methodology and automated coverage, see the **[Aereo regression tests](aereo_tests/)**. Synthetic fixtures in the repository support reproducibility; they are optional and not required to operate the API.
 
 ---
 
