@@ -1,4 +1,4 @@
-<!-- GEOINSIGHT_V2_LOCAL_REVIEW_README_V5: screenshots, phases, benchmark results and locally validated V2 -->
+<!-- GEOINSIGHT_V2_PUBLIC_RELEASE_README_V6: live V2, measured local evidence, verified production workflows -->
 <div align="center">
 
 # GeoInsight
@@ -15,7 +15,7 @@ Upload geospatial files. Measure in the right coordinate system. Inspect *why* a
 
 ### [🚀 Open the live GeoInsight workspace →](https://geoinsight-aereo.onrender.com/geospatial)
 
-<sub>The links above point to the existing public submission. The V2 features and screenshots below were verified locally; public deployment of V2 is pending a separate release.</sub>
+<sub>**GeoInsight V2 is live on Render** · Release deployment: GitHub merge commit `23e7c3a` · Synthetic/public datasets only · Free-tier cold starts may apply.</sub>
 
 </div>
 
@@ -60,15 +60,15 @@ Upload geospatial files. Measure in the right coordinate system. Inspect *why* a
 
 ### What has been verified
 
-| **160 / 160** | **4 / 4** | **Docker + PostgreSQL** | **Public submission** |
+| **160 / 160** | **44 / 44** | **Docker + PostgreSQL** | **V2 live on Render** |
 | :---: | :---: | :---: | :---: |
-| V2 local Aereo backend tests passed | PDF polish tests passed locally | Production image, real upload/PDF and stored data after app restart verified locally | Previous deployed version; V2 not deployed yet |
+| Isolated backend regression tests passed | Frontend Node tests passed; 4 PDF-polish tests also passed | Local Docker and PostgreSQL restart persistence validated | Public upload, known-size results, survey comparison and PDF verified |
 
-The V2 counts above are from **local** October 2026 checks with synthetic reference data. The publicly linked Render service is the previous submission until an explicit V2 deployment. These checks are not a security audit, high-scale load test or certified land survey. See [testing and reproducibility](#testing-and-reproducibility).
+The backend/frontend counts above are **local and CI-supported checks** using synthetic reference data. The Render service now runs V2 (`23e7c3a`): its health, public measurement upload, known-size comparison and PDF export were verified after deployment. This is not a security audit, high-scale load test or certified land survey. See [testing and reproducibility](#testing-and-reproducibility).
 
-### V2 development phases and verified outcomes (local release candidate)
+### V2 development phases and verified outcomes
 
-V2 hardening was performed **only** in `GeoInsight-Hardening-Lab`; the original submitted checkout and current public Render deployment were not modified during these local checks. Each phase below is implemented and locally verified, subject to the test scope explained in the [verification record](docs/GEOINSIGHT_V2_VERIFICATION.md).
+V2 hardening and its synthetic benchmarks were first verified in the isolated `GeoInsight-Hardening-Lab` worktree, preserving the original submitted checkout. After a reviewed pull request, V2 was merged into `main` and deployed to Render. Each phase below has local verification evidence; only the explicitly listed public smoke tests were repeated on Render. See the [verification record](docs/GEOINSIGHT_V2_VERIFICATION.md).
 
 | Phase | Engineering change | Locally recorded evidence |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ The following values are transcribed from the Locust `Aggregated` rows of the na
 
 ## Live results — product showcase
 
-These are **screenshots captured from the locally verified V2 React application** using synthetic test inputs. The backend generated the displayed values and map layers through real requests; these are not interface mockups. The linked public Render instance may still show the earlier submission until V2 is separately deployed. **Select an image to view the full-resolution capture.**
+These are **real screenshots captured from the locally verified V2 React application** using synthetic inputs. The backend generated the displayed measurements and map layers through real requests, and the corresponding V2 workflows have now also been exercised on Render. These are not mockups. **Select an image to view the full-resolution capture.**
 
 ### 1. Inspect geometry and measurement provenance
 
@@ -207,7 +207,7 @@ Geospatial data is not automatically measurable just because a map can display i
 
 ## System architecture
 
-**V2 architecture (locally verified release candidate).** The public Render URL still serves the earlier submitted version until a controlled deployment. V2 retains the same **one-image, same-origin React + FastAPI** deployment model, but adds admission control, a bounded read cache, observability and evidence exports. The boxes below are logical components inside the **same application process**, not separate microservices.
+**V2 architecture (live release, locally validated internals).** Render now serves V2 from GitHub `main` at merge commit `23e7c3a`. The application retains the **one-image, same-origin React + FastAPI** deployment model and adds admission control, a bounded read cache, observability and evidence exports. The boxes below are logical components inside the **same application process**, not separate microservices.
 
 ```mermaid
 flowchart TB
@@ -277,7 +277,7 @@ sequenceDiagram
         GATE-->>UI: 201 Created + file ID
     end
     UI->>API: GET /api/files/{id}/measurements/
-    Note over API,DB: Bounded process-local cache; ETag + conditional 304 on cached reads
+    Note over API,DB: Bounded process-local cache with ETags and conditional HTTP 304 responses
     API-->>UI: Feature measurements or 304 Not Modified
     R->>UI: Request verification PDF
     UI->>API: GET /api/files/{id}/verification-report.pdf
@@ -606,20 +606,20 @@ Swagger is at `http://127.0.0.1:18130/docs`. Without `AEREO_DATABASE_URL`, the A
 
 ## Testing and reproducibility
 
-The previous public submission was verified with **synthetic known-size geometry** and API/CI checks. Separately, the V2 hardening worktree passed **160/160 local Aereo backend regression tests** and **4/4 PDF polish tests**; local frontend ESLint and Vite build passed. The V2 production Docker image served five checked HTTP routes, handled a real Shapefile upload and generated a PDF. A separate PostgreSQL 16 container retained the 10,000 m² stored result after an **application-container restart** (the database container stayed running). The PDF formatting polish was applied **after** that Docker image build and therefore still requires a final image rebuild and live smoke test. The new V2 screenshots represent this local release candidate, not the currently deployed public service.
+V2 passed **160/160 isolated Aereo backend tests**, **44/44 frontend Node tests** and **4/4 PDF polish tests**; ESLint and the Vite production build also passed. The **post-polish** Docker image was rebuilt and smoke-tested with a real upload and PDF download. Separately, a local PostgreSQL 16 container retained the known-size 10,000 m² result after an **application-container restart** (the database container stayed running). On Render, commit `23e7c3a` became **Live** and the public measurement upload, 10,000 m² Evidence Passport, six expected comparison checks and two-page PDF with 400 m perimeter were verified. Public database restart persistence and load/security testing were **not** performed.
 
 | Check | Recorded verification |
 | --- | --- |
 | Isolated Aereo backend suite | **V2 local 160 / 160 passed**; original public submission previously reported 81 / 81 |
-| Frontend logic/presentation tests | Original submission **14/14** reported; V2 component-level pagination, decision-brief and Evidence Passport tests also passed in separate local runs (not asserted as one aggregate total) |
-| Real local HTTP acceptance suite | Original submission **37/37**; V2 additional HTTP 200/304/404/429/503, PDF and health probes passed locally |
-| Frontend lint and production build | Passed in local V2 worktree before final release audit |
-| Public reviewer routes | **7 / 7** checked routes returned HTTP 200 |
-| Cloud health | `{"status":"healthy"}` |
-| Cloud data persistence | Original public submission retained its stored record; separately, V2 **local PostgreSQL 16** retained file data after application-container restart |
-| GitHub Actions | **Both API regression and React lint/build jobs passed** on `1bba33f` for the [feature branch](https://github.com/dhanushgowdars/Spatial-Asset-Management-Platform/actions/runs/38122862336) **and** [main](https://github.com/dhanushgowdars/Spatial-Asset-Management-Platform/actions/runs/38123212462) |
+| Frontend logic/presentation tests | **44 / 44 V2 tests passed** in one Node test run; updated CI workflow includes all seven test modules |
+| Real HTTP acceptance probes | Local V2 HTTP 200/304/404/429/503, PDF and health checks passed; public upload, measurement, comparison and PDF also verified |
+| Frontend lint and production build | Passed locally and in GitHub PR CI; final Linux Docker image built and deployed |
+| Public reviewer routes | V2 `/geospatial` and `/geospatial/compare` viewed successfully on Render; older seven-route check was on the prior release |
+| Cloud health | Render logs showed HTTP 200 for `/health` on live V2 |
+| Cloud data persistence | Public V2 upload and stored report retrieval verified; **restart persistence tested with local PostgreSQL 16**, not on the live service |
+| GitHub Actions | Both FastAPI/GIS and React CI checks passed on [V2 pull request #1](https://github.com/dhanushgowdars/Spatial-Asset-Management-Platform/pull/1) before merge |
 
-The visible regression evidence is **test evidence**, not certified land-survey precision, security audit or load test. The current CI runs isolated Aereo backend tests plus a frontend contract test, lint and build; the larger local frontend tests are not all part of the CI workflow.
+The visible regression evidence is **test evidence**, not certified land-survey precision, a security audit or a production load test. CI includes isolated Aereo backend tests and the seven frontend Node test modules, lint and build. Benchmarks were local, synthetic and small-sample.
 
 Run the isolated checks (the **V2** local worktree should use its explicit `.venv` interpreter for Python checks, and should never run the legacy root-level pytest suite):
 
@@ -661,7 +661,7 @@ For verification methodology and automated coverage, see the **[Aereo regression
 
 **Boundaries of this release:**
 
-- The **publicly deployed submission** has **no authentication, per-user isolation or rate limiting**. The **locally tested V2** adds in-memory, per-peer upload rate limiting, bounded upload/analysis admission control, a bounded read cache with ETags, and request timing/IDs, but these safeguards do **not** replace authentication or user isolation and were **not deployed** at the time of this local screenshot review. Use public/synthetic data only; knowing a stored ID enables retrieval. Uploaded-result retention/deletion is not managed for end users.
+- The **publicly deployed V2** has **no authentication or per-user isolation**. It adds in-memory, per-peer upload rate limiting, bounded upload/analysis admission control, a bounded read cache with ETags, and request timing/IDs, but these safeguards do **not** replace authentication or user isolation. Use public/synthetic data only; knowing a stored ID enables retrieval. Uploaded-result retention/deletion is not managed for end users.
 - Limits include 10 MiB compressed uploads, up to 5,000 features per upload and tighter limits for complex overlays. Inputs exceeding those boundaries can be rejected.
 - Metrics are **2D projected planar** results; not certified cadastral, geodesic over continental extents, elevation-aware, raster/DEM or photogrammetric reconstructions.
 - The free Render deployment may cold-start and its free PostgreSQL offering is temporary (30-day lifetime in the configured assessment plan). It should not be treated as long-lived production hosting.
@@ -680,7 +680,7 @@ Possible follow-ups—**not claimed as implemented**—include authentication an
 
 The original platform's APIs are **not** part of the public GeoInsight deployment, and its unfinished frontend is **not** presented as a completed feature here. Splitting the two applications into independent repositories is future cleanup, not a requirement for this submission.
 
-**V2 release documentation:** [Changelog](CHANGELOG.md) · [Release notes (draft)](docs/GEOINSIGHT_V2_RELEASE_NOTES.md) · [Architecture](docs/GEOINSIGHT_V2_ARCHITECTURE.md) · [Verification evidence](docs/GEOINSIGHT_V2_VERIFICATION.md) · [MIT License](LICENSE)
+**V2 release documentation:** [Changelog](CHANGELOG.md) · [Release notes](docs/GEOINSIGHT_V2_RELEASE_NOTES.md) · [Architecture](docs/GEOINSIGHT_V2_ARCHITECTURE.md) · [Verification evidence](docs/GEOINSIGHT_V2_VERIFICATION.md) · [MIT License](LICENSE)
 
 **Further technical context:** [GeoInsight supporting guide](docs/GEOINSIGHT_TECHNICAL_GUIDE.md) · [API implementation](aereo/api.py) · [GIS engine](app/services/geospatial/engine.py) · [Regression tests](aereo_tests/) · [CI workflow](.github/workflows/aereo-ci.yml)
 

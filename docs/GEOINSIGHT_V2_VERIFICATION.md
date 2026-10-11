@@ -1,6 +1,6 @@
 # GeoInsight V2 — Engineering Hardening and Local Verification Record
 
-> **Status:** October 2026 local release candidate, not yet deployed to the linked public Render application. This document describes synthetic benchmark workloads and **reported local test observations**, not audited service-level objectives. The older Aereo submission remains distinct until the controlled V2 release.
+> **Status:** V2 was deployed to the public Render service on 2026-10-12 from GitHub merge commit `23e7c3a`, after the local release checks and GitHub PR CI passed. The workloads and latency figures in this document remain **local synthetic observations**, not audited production performance objectives.
 
 ## Scope, evidence and trust boundaries
 
@@ -78,7 +78,7 @@ The following values are transcribed from the Locust `Aggregated` rows of the na
 - **7A:** feature table paginated **50 records per page** in the browser (not backend pagination). Map selection navigates to the proper table page; clicking a table record focuses the geometry and smoothly scrolls to the map. The negative-zero display artifact was fixed.
 - **7B:** bounded PDF survey report generated from persisted JSON through ReportLab. Download endpoint `GET /api/files/{file_id}/verification-report.pdf`, with proper PDF media type and attachment headers, 404 handling, SHA-256/CRS/status/method/limitations and feature appendix. Eight new PDF regression tests were added; a malformed report count mismatch was fixed by validating before reading summary internals.
 - **7C:** PDF presentation changed to show **m²** notation and polygon perimeter; **4/4** PDF presentation tests passed. Local production Docker image built and successfully served the app; Linux container returned HTTP **200** for `/health`, `/geospatial`, `/geospatial/compare`, `/geospatial/quality`, `/openapi.json`. A zipped Shapefile uploaded and a PDF downloaded. A separate isolated PostgreSQL 16 setup successfully stored/retrieved a 10,000 m² measurement and generated a PDF. **After restarting only the application container**, the same PostgreSQL-backed file still returned **10,000.0 m²**.
-- **Final local container smoke verification completed after PDF polish:** the final Docker image was rebuilt successfully, returned `healthy`, uploaded `plot-utm43n.zip`, returned the stored area **10,000 m²**, and produced a **4,912-byte** PDF with the updated `m²` notation (first page visually checked). The **400 m perimeter** is validated by the source-data evidence and PDF presentation tests; a visual check of the final PDF appendix page remains optional. This verification remains **local**, not a successful public Render deployment.
+- **Final local container smoke verification completed after PDF polish:** the final Docker image was rebuilt successfully, returned `healthy`, uploaded `plot-utm43n.zip`, returned the stored area **10,000 m²**, and produced a **4,912-byte** PDF with the updated `m²` notation (first page visually checked). The **400 m perimeter** was confirmed visually on page 2 of the public PDF. The final Docker/image test remains **local** evidence; separately, the live Render V2 deployment passed measurement, comparison and PDF smoke tests.
 
 ## Test matrix and recorded results
 
@@ -87,8 +87,8 @@ The following values are transcribed from the Locust `Aggregated` rows of the na
 | V2 backend regression suite, isolated `aereo_tests` | **160 passed** (12.85s in final reported run) | Windows Python 3.11.8; includes 8 PDF tests. No general root pytest. |
 | PDF presentation-specific tests | **4 passed** (0.72s) | Additional locally supplied validation checks; not part of the 160 collection. |
 | Frontend ESLint | **Passed** | V2 local worktree. |
-| Frontend Vite production build | **Passed** | Nonblocking warning: JS chunk over 500 kB. No V2 CI run claimed yet. |
-| Selected React/component regression files | **Passed in separate reported runs** | Pagination, decision brief, evidence panel, negative-zero behavior. Counts from different runs must not be blindly added. |
+| Frontend Vite production build | **Passed** | Nonblocking warning: JS chunk over 500 kB; GitHub PR React CI check also passed. |
+| Selected React/component regression files | **44/44 passed** in one Node run | Seven frontend Node test modules; pagination, decision brief, evidence panel, negative-zero and older contracts. |
 | Git `diff --check` | **No whitespace errors** | CRLF/LF conversion notice on `.dockerignore` is non-fatal. |
 | SQLite-backed production container | **Started**, 5 tested HTTP routes **200** | Real zipped Shapefile upload, downloaded PDF roughly **4.9 kB**. |
 | PostgreSQL-backed production container | **Healthy**, 1 feature stored and read | Verification report schema 1.0; PDF roughly **4.9 kB**. |
@@ -100,8 +100,8 @@ The following values are transcribed from the Locust `Aggregated` rows of the na
 1. **No authentication or per-user data isolation** is claimed. The local rate limiter and admission controls provide availability protections, not access control. Reviewers should upload public/synthetic data only.
 2. **No survey certification** or independent GIS recomputation of stored reports is claimed. CRS projection distortion, invalid geometry and arithmetic area sums require interpretation.
 3. **No production load-test, security audit or production latency SLO** was established from the local benchmarks. Raw CSVs were inspected by the user and aggregate values are recorded above; the CSVs remain in the isolated local `benchmarks/v2/output/` folder and are ignored by Git unless a separately reviewed evidence export is prepared.
-4. **V2 is not yet deployed** to Render; public README links still refer to the original submitted application until controlled deployment and verification.
-5. **Completed locally:** final post-polish Docker rebuild and smoke test, MIT LICENSE selection, changelog/release-notes drafting, frontend lint/build and isolated backend tests. **Still pending:** explicit Git staging audit, GitHub CI on the pushed branch, controlled Render deployment and public HTTP/browser verification.
+4. **V2 is now live** on Render from `23e7c3a`; public upload, measurement evidence, comparison and PDF were verified. Live-service database restart persistence, security testing and production load testing were not performed.
+5. **Release gates completed:** staged-source audit, verified Git author, 60-file V2 commit, both PR CI checks, merge into `main`, Render deployment, public upload/measurement/comparison and PDF checks. **Remaining:** publish GitHub tag and release notes after documentation reconciliation.
 
 ### Safe local verification commands
 

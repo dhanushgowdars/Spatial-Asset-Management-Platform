@@ -2,9 +2,9 @@
 
 All notable GeoInsight assessment enhancements are recorded here. The original Spatial Asset Management Platform is a separate legacy codebase in this repository; this changelog describes the **GeoInsight** application.
 
-## [Unreleased] — GeoInsight V2 release candidate (October 2026)
+## [v2.0.0] — GeoInsight V2 public release (2026-10-12)
 
-> **Deployment status:** V2 changes were verified in an isolated worktree and are not claimed live at the existing public Render URL until the controlled deployment is completed and checked. For methods, caveats, and test evidence see [V2 verification](docs/GEOINSIGHT_V2_VERIFICATION.md); for components and data flows see [V2 architecture](docs/GEOINSIGHT_V2_ARCHITECTURE.md).
+> **Deployment status:** V2 was merged through [pull request #1](https://github.com/dhanushgowdars/Spatial-Asset-Management-Platform/pull/1), deployed on Render from commit `23e7c3a`, and verified with a public upload, known-size measurement, comparison and PDF download. For the local benchmark and test scope see [V2 verification](docs/GEOINSIGHT_V2_VERIFICATION.md).
 
 ### Phase 1 — Reproducible workloads
 - Added synthetic GIS benchmark fixtures and a Locust-based harness for uploads and seeded reads: mixed GeoJSON, larger feature sets, complex geometries, Shapefile, KML, and KMZ.
@@ -41,7 +41,7 @@ All notable GeoInsight assessment enhancements are recorded here. The original S
 - Frontend ESLint and production Vite build passed. The main bundled JS chunk reported a nonblocking size warning.
 - First production Docker image started, served five HTTP routes with 200 responses, processed a real sample and generated PDF downloads.
 - PostgreSQL-backed upload, stored measurement, verification JSON/PDF and retrieval after app restart passed.
-- **Final post-polish image was rebuilt and smoke-tested** locally: health, Shapefile upload and PDF export succeeded; downloaded PDF was **4,912 bytes** and displayed `m²`. Remaining release gates: reviewed staging, GitHub CI, Render deployment and public browser/HTTP checks.
+- **Final post-polish image was rebuilt and smoke-tested** locally: health, Shapefile upload and PDF export succeeded; downloaded PDF was **4,912 bytes** and displayed `m²`. Subsequently V2 passed the two GitHub PR CI checks and deployed live on Render from `23e7c3a`; public survey analysis, a 6/6 sample comparison, and a two-page report with a 400 m perimeter were verified.
 
 ### Limits
 - In-memory protections and cache are **per application process**, not distributed. No authentication, private upload tenancy, user deletion/retention or certified survey accuracy is claimed.
