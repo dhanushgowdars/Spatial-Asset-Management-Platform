@@ -6,3 +6,4 @@ defusedxml>=0.7,<1
 
 # Starlette TestClient compatibility
 httpx2==2.13.1
+reportlab==4.4.9

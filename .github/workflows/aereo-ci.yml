@@ -65,6 +65,16 @@ jobs:
       - name: Validate GIS demo contracts
         run: node --test src/pages/SpatialIntelligence/demoContracts.test.mjs
 
+      - name: Run geospatial UI and V2 logic tests
+        run: |
+          node --test \
+            src/pages/SpatialIntelligence/derivedProvenance.test.mjs \
+            src/pages/SpatialIntelligence/presentation.test.mjs \
+            src/pages/SpatialIntelligence/negativeZeroDisplay.test.mjs \
+            src/pages/SpatialIntelligence/surveyChangeBrief.test.mjs \
+            src/pages/Geospatial/measurementPagination.test.mjs \
+            src/pages/Geospatial/surveyEvidence.test.mjs
+
       - name: Lint frontend
         run: npm run lint
 

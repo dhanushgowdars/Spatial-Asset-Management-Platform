@@ -1,0 +1,9 @@
+/* Local feature-table DOM paging; every filtered feature remains searchable. */
+.gi-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 15px;padding:10px 13px;background:#f3faf8;border:1px solid #cee9e2;border-radius:10px;color:#355c66;font-size:13px}
+.gi-pagination-note{font-weight:650;font-variant-numeric:tabular-nums}
+.gi-pagination-actions{display:flex;align-items:center;gap:9px}
+.gi-pagination-actions button{border:1px solid #b5d9d3;background:white;border-radius:8px;padding:7px 12px;color:#076e63;font:inherit;font-weight:750;cursor:pointer}
+.gi-pagination-actions button:disabled{opacity:.48;cursor:not-allowed}
+.gi-pagination-actions button:focus-visible{outline:2px solid #087e72;outline-offset:2px}
+.gi-pagination-actions span{font-variant-numeric:tabular-nums;font-weight:750;white-space:nowrap}
+@media(max-width:650px){.gi-pagination{align-items:stretch}.gi-pagination-actions{justify-content:space-between;width:100%}}
